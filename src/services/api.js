@@ -31,7 +31,18 @@ export async function requisitarApi(endpoint, opcoes = {}) {
         window.location.reload();
       }
     }
-    const mensagemErro = dados?.message || (typeof dados === 'string' ? dados : 'Erro na requisição');
+
+    let mensagemErro = dados?.mensagem || dados?.message;
+    if (dados?.errosValidacao && typeof dados.errosValidacao === 'object') {
+      const detalhesValidacao = Object.values(dados.errosValidacao).join('; ');
+      if (detalhesValidacao) {
+        mensagemErro = mensagemErro ? `${mensagemErro} (${detalhesValidacao})` : detalhesValidacao;
+      }
+    }
+    if (!mensagemErro) {
+      mensagemErro = dados?.erro || (typeof dados === 'string' ? dados : `Erro ${resposta.status}: Requisição inválida`);
+    }
+
     throw new Error(mensagemErro);
   }
 
@@ -42,7 +53,7 @@ export const servicoAutenticacao = {
   entrar: async (email, senha) => {
     const dados = await requisitarApi('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, senha }),
+      body: JSON.stringify({ email: email ? email.trim() : '', senha }),
     });
     if (dados && dados.token) {
       localStorage.setItem('token', dados.token);
@@ -59,8 +70,8 @@ export const servicoAutenticacao = {
     const dados = await requisitarApi('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
-        nome,
-        email,
+        nome: nome ? nome.trim() : '',
+        email: email ? email.trim() : '',
         senha,
         perfil: 'CLIENTE'
       }),
@@ -93,29 +104,29 @@ export const servicoAutenticacao = {
 
 export const servicoPedidos = {
   obterTodosPedidos: async () => {
-    return await requisitarApi('/orders');
+    return await requisitarApi('/pedidos/listar-pedidos');
   },
 
   obterPedidoPorId: async (id) => {
-    return await requisitarApi(`/orders/${id}`);
+    return await requisitarApi(`/pedidos/${id}`);
   },
 
   criarPedido: async (dadosPedido) => {
-    return await requisitarApi('/orders', {
+    return await requisitarApi('/pedidos', {
       method: 'POST',
       body: JSON.stringify(dadosPedido),
     });
   },
 
   atualizarStatusPedido: async (id, status) => {
-    return await requisitarApi(`/orders/${id}/status`, {
+    return await requisitarApi(`/pedidos/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
   },
 };
 
-// Aliases para compatibilidade se necessário
+// Aliases para compatibilidade
 export const authService = servicoAutenticacao;
 export const orderService = servicoPedidos;
 export const apiFetch = requisitarApi;
