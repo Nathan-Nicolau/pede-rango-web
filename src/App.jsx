@@ -5,103 +5,103 @@ import { OrderStats } from './components/OrderStats';
 import { OrderCard } from './components/OrderCard';
 import { CreateOrderModal } from './components/CreateOrderModal';
 import { OrderDetailModal } from './components/OrderDetailModal';
-import { authService, orderService } from './services/api';
+import { servicoAutenticacao, servicoPedidos } from './services/api';
 import { Search, Filter, RefreshCw, AlertTriangle, Plus } from 'lucide-react';
 
 export default function App() {
-  const [user, setUser] = useState(authService.getCurrentUser());
-  const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [usuario, definirUsuario] = useState(servicoAutenticacao.obterUsuarioAtual());
+  const [estaAutenticado, definirEstaAutenticado] = useState(servicoAutenticacao.estaAutenticado());
+  const [pedidos, definirPedidos] = useState([]);
+  const [carregando, definirCarregando] = useState(false);
+  const [erro, definirErro] = useState(null);
 
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  // Filtros
+  const [termoBusca, definirTermoBusca] = useState('');
+  const [filtroStatus, definirFiltroStatus] = useState('ALL');
 
-  // Modals
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  // Modais
+  const [modalCriacaoAberto, definirModalCriacaoAberto] = useState(false);
+  const [pedidoSelecionado, definirPedidoSelecionado] = useState(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchOrders();
+    if (estaAutenticado) {
+      carregarPedidos();
     }
-  }, [isAuthenticated]);
+  }, [estaAutenticado]);
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    setError(null);
+  const carregarPedidos = async () => {
+    definirCarregando(true);
+    definirErro(null);
     try {
-      const data = await orderService.getAllOrders();
-      setOrders(data);
+      const dados = await servicoPedidos.obterTodosPedidos();
+      definirPedidos(dados || []);
     } catch (err) {
-      setError(err.message || 'Erro ao carregar lista de pedidos.');
+      definirErro(err.message || 'Erro ao carregar lista de pedidos.');
     } finally {
-      setLoading(false);
+      definirCarregando(false);
     }
   };
 
-  const handleAuthSuccess = () => {
-    setUser(authService.getCurrentUser());
-    setIsAuthenticated(true);
+  const aoAutenticarComSucesso = () => {
+    definirUsuario(servicoAutenticacao.obterUsuarioAtual());
+    definirEstaAutenticado(true);
   };
 
-  const handleLogout = () => {
-    authService.logout();
-    setUser(null);
-    setIsAuthenticated(false);
-    setOrders([]);
+  const aoSair = () => {
+    servicoAutenticacao.sair();
+    definirUsuario(null);
+    definirEstaAutenticado(false);
+    definirPedidos([]);
   };
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
+  const aoAtualizarStatus = async (idPedido, novoStatus) => {
     try {
-      const updatedOrder = await orderService.updateOrderStatus(orderId, newStatus);
-      setOrders(orders.map(o => o.id === orderId ? updatedOrder : o));
-      if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder(updatedOrder);
+      const pedidoAtualizado = await servicoPedidos.atualizarStatusPedido(idPedido, novoStatus);
+      definirPedidos(pedidos.map(p => p.id === idPedido ? pedidoAtualizado : p));
+      if (pedidoSelecionado && pedidoSelecionado.id === idPedido) {
+        definirPedidoSelecionado(pedidoAtualizado);
       }
     } catch (err) {
       alert('Erro ao atualizar status: ' + err.message);
     }
   };
 
-  const handleOrderCreated = (newOrder) => {
-    setOrders([newOrder, ...orders]);
+  const aoCriarPedido = (novoPedido) => {
+    definirPedidos([novoPedido, ...pedidos]);
   };
 
-  const filteredOrders = orders.filter(order => {
-    const customerName = order.nomeCliente || order.customerName || '';
-    const address = order.enderecoEntrega || order.deliveryAddress || '';
-    const code = (order.codigo || order.id || '').toString();
-    const searchLower = searchTerm.toLowerCase();
+  const pedidosFiltrados = pedidos.filter(pedido => {
+    const nomeCliente = pedido.nomeCliente || pedido.customerName || '';
+    const endereco = pedido.enderecoEntrega || pedido.deliveryAddress || '';
+    const codigo = (pedido.codigo || pedido.id || '').toString();
+    const termoLower = termoBusca.toLowerCase();
 
-    const matchesSearch = customerName.toLowerCase().includes(searchLower) ||
-                          address.toLowerCase().includes(searchLower) ||
-                          code.toLowerCase().includes(searchLower);
-    const matchesStatus = statusFilter === 'ALL' || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const combinaBusca = nomeCliente.toLowerCase().includes(termoLower) ||
+                          endereco.toLowerCase().includes(termoLower) ||
+                          codigo.toLowerCase().includes(termoLower);
+    const combinaStatus = filtroStatus === 'ALL' || pedido.status === filtroStatus;
+    return combinaBusca && combinaStatus;
   });
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       {/* Navbar */}
       <Navbar
-        user={user}
-        onLogout={handleLogout}
-        onOpenNewOrder={() => setIsCreateModalOpen(true)}
+        usuario={usuario}
+        aoSair={aoSair}
+        aoAbrirNovoPedido={() => definirModalCriacaoAberto(true)}
       />
 
-      {/* Main Content */}
+      {/* Conteúdo Principal */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
-        {!isAuthenticated ? (
-          <AuthModal onAuthSuccess={handleAuthSuccess} />
+        {!estaAutenticado ? (
+          <AuthModal aoAutenticarComSucesso={aoAutenticarComSucesso} />
         ) : (
           <>
-            {/* Live Stats */}
-            <OrderStats orders={orders} />
+            {/* Estatísticas */}
+            <OrderStats pedidos={pedidos} />
 
-            {/* Filter and Search Bar */}
+            {/* Barra de Filtro e Busca */}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -114,26 +114,26 @@ export default function App() {
               borderRadius: '16px',
               border: '1px solid var(--border-color)'
             }}>
-              {/* Search input */}
+              {/* Input de Busca */}
               <div style={{ position: 'relative', flex: '1 1 300px' }}>
                 <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
                   className="form-input"
                   placeholder="Buscar por ID, código, cliente ou endereço..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={termoBusca}
+                  onChange={(e) => definirTermoBusca(e.target.value)}
                   style={{ paddingLeft: '40px', width: '100%' }}
                 />
               </div>
 
-              {/* Status filter dropdown & Refresh */}
+              {/* Dropdown de Filtro de Status & Atualizar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Filter size={16} color="var(--text-secondary)" />
                   <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    value={filtroStatus}
+                    onChange={(e) => definirFiltroStatus(e.target.value)}
                     className="form-input"
                     style={{ padding: '10px 14px', cursor: 'pointer', borderRadius: '10px' }}
                   >
@@ -147,21 +147,21 @@ export default function App() {
                 </div>
 
                 <button
-                  onClick={fetchOrders}
+                  onClick={carregarPedidos}
                   className="btn-secondary"
                   style={{ padding: '10px 14px' }}
                   title="Atualizar lista"
                 >
-                  <RefreshCw size={16} className={loading ? 'spin' : ''} />
+                  <RefreshCw size={16} className={carregando ? 'spin' : ''} />
                 </button>
               </div>
             </div>
 
-            {/* Error Message */}
-            {error && (
+            {/* Mensagem de Erro */}
+            {erro && (
               <div style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
+                backgroundColor: 'rgba(211, 1, 1, 0.15)',
+                border: '1px solid rgba(211, 1, 1, 0.4)',
                 color: '#f87171',
                 padding: '16px',
                 borderRadius: '12px',
@@ -172,20 +172,20 @@ export default function App() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <AlertTriangle size={20} />
-                  <span>{error} (Certifique-se de que a API Spring Boot está rodando em http://localhost:8100)</span>
+                  <span>{erro} (Certifique-se de que a API Spring Boot está rodando em http://localhost:8100)</span>
                 </div>
-                <button onClick={fetchOrders} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
+                <button onClick={carregarPedidos} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
                   Tentar novamente
                 </button>
               </div>
             )}
 
-            {/* Orders Grid */}
-            {loading && orders.length === 0 ? (
+            {/* Grid de Pedidos */}
+            {carregando && pedidos.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-secondary)' }}>
                 Carregando pedidos...
               </div>
-            ) : filteredOrders.length === 0 ? (
+            ) : pedidosFiltrados.length === 0 ? (
               <div style={{
                 textAlign: 'center',
                 padding: '60px 20px',
@@ -197,12 +197,12 @@ export default function App() {
                   Nenhum pedido encontrado
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px' }}>
-                  {searchTerm || statusFilter !== 'ALL'
+                  {termoBusca || filtroStatus !== 'ALL'
                     ? 'Tente alterar os filtros de busca para encontrar pedidos.'
                     : 'Crie seu primeiro pedido para visualizar no painel!'}
                 </p>
-                {!searchTerm && statusFilter === 'ALL' && (
-                  <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">
+                {!termoBusca && filtroStatus === 'ALL' && (
+                  <button onClick={() => definirModalCriacaoAberto(true)} className="btn-primary">
                     <Plus size={18} /> Criar Primeiro Pedido
                   </button>
                 )}
@@ -213,12 +213,12 @@ export default function App() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                 gap: '20px'
               }}>
-                {filteredOrders.map((order) => (
+                {pedidosFiltrados.map((pedido) => (
                   <OrderCard
-                    key={order.id}
-                    order={order}
-                    onClick={(ord) => setSelectedOrder(ord)}
-                    onUpdateStatus={handleUpdateStatus}
+                    key={pedido.id}
+                    pedido={pedido}
+                    aoClicar={(p) => definirPedidoSelecionado(p)}
+                    aoAtualizarStatus={aoAtualizarStatus}
                   />
                 ))}
               </div>
@@ -227,19 +227,19 @@ export default function App() {
         )}
       </main>
 
-      {/* Modals */}
-      {isCreateModalOpen && (
+      {/* Modais */}
+      {modalCriacaoAberto && (
         <CreateOrderModal
-          onClose={() => setIsCreateModalOpen(false)}
-          onOrderCreated={handleOrderCreated}
+          aoFechar={() => definirModalCriacaoAberto(false)}
+          aoCriarPedido={aoCriarPedido}
         />
       )}
 
-      {selectedOrder && (
+      {pedidoSelecionado && (
         <OrderDetailModal
-          order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-          onUpdateStatus={handleUpdateStatus}
+          pedido={pedidoSelecionado}
+          aoFechar={() => definirPedidoSelecionado(null)}
+          aoAtualizarStatus={aoAtualizarStatus}
         />
       )}
     </div>

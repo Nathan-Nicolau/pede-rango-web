@@ -1,71 +1,71 @@
 import React, { useState } from 'react';
-import { orderService } from '../services/api';
+import { servicoPedidos } from '../services/api';
 import { X, Plus, Trash2, ShoppingBag, MapPin, User, AlertCircle } from 'lucide-react';
 
-export function CreateOrderModal({ onClose, onOrderCreated }) {
-  const [customerName, setCustomerName] = useState('');
-  const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [items, setItems] = useState([
-    { name: '', quantity: 1, unitPrice: '' }
+export function CreateOrderModal({ aoFechar, aoCriarPedido }) {
+  const [nomeCliente, definirNomeCliente] = useState('');
+  const [enderecoEntrega, definirEnderecoEntrega] = useState('');
+  const [itens, definirItens] = useState([
+    { nome: '', quantidade: 1, precoUnitario: '' }
   ]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [carregando, definirCarregando] = useState(false);
+  const [erro, definirErro] = useState(null);
 
-  const handleAddItem = () => {
-    setItems([...items, { name: '', quantity: 1, unitPrice: '' }]);
+  const aoAdicionarItem = () => {
+    definirItens([...itens, { nome: '', quantidade: 1, precoUnitario: '' }]);
   };
 
-  const handleRemoveItem = (index) => {
-    if (items.length === 1) return;
-    setItems(items.filter((_, i) => i !== index));
+  const aoRemoverItem = (indice) => {
+    if (itens.length === 1) return;
+    definirItens(itens.filter((_, i) => i !== indice));
   };
 
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...items];
-    newItems[index][field] = value;
-    setItems(newItems);
+  const aoAlterarItem = (indice, campo, valor) => {
+    const novosItens = [...itens];
+    novosItens[indice][campo] = valor;
+    definirItens(novosItens);
   };
 
-  const calculateTotal = () => {
-    return items.reduce((acc, item) => {
-      const qty = parseFloat(item.quantity) || 0;
-      const price = parseFloat(item.unitPrice) || 0;
-      return acc + qty * price;
+  const calcularTotal = () => {
+    return itens.reduce((acc, item) => {
+      const qtd = parseFloat(item.quantidade) || 0;
+      const preco = parseFloat(item.precoUnitario) || 0;
+      return acc + qtd * preco;
     }, 0).toFixed(2);
   };
 
-  const handleSubmit = async (e) => {
+  const aoSubmeter = async (e) => {
     e.preventDefault();
-    setError(null);
+    definirErro(null);
 
-    // Validate items
-    for (let i = 0; i < items.length; i++) {
-      if (!items[i].name.trim() || !items[i].unitPrice || items[i].quantity <= 0) {
-        setError(`Preencha todos os campos do item #${i + 1} corretamente.`);
+    // Validação dos itens
+    for (let i = 0; i < itens.length; i++) {
+      if (!itens[i].nome.trim() || !itens[i].precoUnitario || itens[i].quantidade <= 0) {
+        definirErro(`Preencha todos os campos do item #${i + 1} corretamente.`);
         return;
       }
     }
 
-    setLoading(true);
+    definirCarregando(true);
 
     try {
       const payload = {
-        nomeCliente: customerName,
-        enderecoEntrega: deliveryAddress,
-        itens: items.map(item => ({
-          nome: item.name,
-          quantidade: parseInt(item.quantity, 10),
-          precoUnitario: parseFloat(item.unitPrice)
+        nomeCliente,
+        enderecoEntrega,
+        itens: itens.map(item => ({
+          nome: item.nome,
+          quantidade: parseInt(item.quantidade, 10),
+          precoUnitario: parseFloat(item.precoUnitario)
         }))
       };
 
-      const newOrder = await orderService.createOrder(payload);
-      onOrderCreated(newOrder);
-      onClose();
+      const novoPedido = await servicoPedidos.criarPedido(payload);
+      aoCriarPedido(novoPedido);
+      aoFechar();
     } catch (err) {
-      setError(err.message || 'Erro ao criar pedido.');
+      definirErro(err.message || 'Erro ao criar pedido.');
     } finally {
-      setLoading(false);
+      definirCarregando(false);
     }
   };
 
@@ -82,7 +82,7 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              background: 'rgba(249, 115, 22, 0.15)',
+              background: 'rgba(211, 1, 1, 0.15)',
               padding: '8px',
               borderRadius: '10px',
               color: 'var(--primary-accent)'
@@ -92,7 +92,7 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>Criar Novo Pedido</h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={aoFechar}
             style={{
               background: 'transparent',
               border: 'none',
@@ -105,10 +105,10 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
           </button>
         </div>
 
-        {error && (
+        {erro && (
           <div style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
+            backgroundColor: 'rgba(211, 1, 1, 0.15)',
+            border: '1px solid rgba(211, 1, 1, 0.4)',
             color: '#f87171',
             padding: '12px',
             borderRadius: '10px',
@@ -119,11 +119,11 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
             gap: '8px'
           }}>
             <AlertCircle size={18} />
-            <span>{error}</span>
+            <span>{erro}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={aoSubmeter}>
           <div className="form-group">
             <label htmlFor="customer-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <User size={16} /> Nome do Cliente
@@ -133,8 +133,8 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
               type="text"
               className="form-input"
               placeholder="Ex: Maria Oliveira"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
+              value={nomeCliente}
+              onChange={(e) => definirNomeCliente(e.target.value)}
               required
             />
           </div>
@@ -148,13 +148,13 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
               type="text"
               className="form-input"
               placeholder="Ex: Av. Paulista, 1000 - Apto 42, São Paulo"
-              value={deliveryAddress}
-              onChange={(e) => setDeliveryAddress(e.target.value)}
+              value={enderecoEntrega}
+              onChange={(e) => definirEnderecoEntrega(e.target.value)}
               required
             />
           </div>
 
-          {/* Items Section */}
+          {/* Seção de Itens */}
           <div style={{ marginTop: '24px', marginBottom: '24px' }}>
             <div style={{
               display: 'flex',
@@ -167,11 +167,11 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
               </label>
               <button
                 type="button"
-                onClick={handleAddItem}
+                onClick={aoAdicionarItem}
                 style={{
-                  background: 'rgba(249, 115, 22, 0.15)',
+                  background: 'rgba(211, 1, 1, 0.15)',
                   color: 'var(--primary-accent)',
-                  border: '1px solid rgba(249, 115, 22, 0.3)',
+                  border: '1px solid rgba(211, 1, 1, 0.3)',
                   borderRadius: '8px',
                   padding: '6px 12px',
                   fontSize: '0.85rem',
@@ -187,13 +187,13 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {items.map((item, idx) => (
+              {itens.map((item, idx) => (
                 <div key={idx} style={{
                   display: 'grid',
                   gridTemplateColumns: '2fr 1fr 1fr auto',
                   gap: '10px',
                   alignItems: 'center',
-                  backgroundColor: '#0f172a',
+                  backgroundColor: '#141417',
                   padding: '12px',
                   borderRadius: '10px',
                   border: '1px solid var(--border-color)'
@@ -202,8 +202,8 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
                     type="text"
                     className="form-input"
                     placeholder="Ex: Hambúrguer Artesanal"
-                    value={item.name}
-                    onChange={(e) => handleItemChange(idx, 'name', e.target.value)}
+                    value={item.nome}
+                    onChange={(e) => aoAlterarItem(idx, 'nome', e.target.value)}
                     required
                   />
                   <input
@@ -211,8 +211,8 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
                     min="1"
                     className="form-input"
                     placeholder="Qtd"
-                    value={item.quantity}
-                    onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                    value={item.quantidade}
+                    onChange={(e) => aoAlterarItem(idx, 'quantidade', e.target.value)}
                     required
                   />
                   <input
@@ -221,16 +221,16 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
                     min="0"
                     className="form-input"
                     placeholder="Preço (R$)"
-                    value={item.unitPrice}
-                    onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                    value={item.precoUnitario}
+                    onChange={(e) => aoAlterarItem(idx, 'precoUnitario', e.target.value)}
                     required
                   />
                   <button
                     type="button"
-                    onClick={() => handleRemoveItem(idx)}
-                    disabled={items.length === 1}
+                    onClick={() => aoRemoverItem(idx)}
+                    disabled={itens.length === 1}
                     className="btn-danger"
-                    style={{ opacity: items.length === 1 ? 0.4 : 1, cursor: items.length === 1 ? 'not-allowed' : 'pointer' }}
+                    style={{ opacity: itens.length === 1 ? 0.4 : 1, cursor: itens.length === 1 ? 'not-allowed' : 'pointer' }}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -239,29 +239,29 @@ export function CreateOrderModal({ onClose, onOrderCreated }) {
             </div>
           </div>
 
-          {/* Total summary */}
+          {/* Resumo do Total */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: '16px',
-            backgroundColor: '#0f172a',
+            backgroundColor: '#141417',
             borderRadius: '12px',
             border: '1px solid var(--border-color)',
             marginBottom: '24px'
           }}>
             <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Valor Total do Pedido:</span>
             <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--primary-accent)' }}>
-              R$ {calculateTotal()}
+              R$ {calcularTotal()}
             </span>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} className="btn-secondary">
+            <button type="button" onClick={aoFechar} className="btn-secondary">
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Salvando...' : 'Confirmar Pedido'}
+            <button type="submit" className="btn-primary" disabled={carregando}>
+              {carregando ? 'Salvando...' : 'Confirmar Pedido'}
             </button>
           </div>
         </form>
