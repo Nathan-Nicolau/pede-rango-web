@@ -1,117 +1,121 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8100';
+const URL_BASE_API = import.meta.env.VITE_API_URL || 'http://localhost:8100';
 
-export async function apiFetch(endpoint, options = {}) {
+export async function requisitarApi(endpoint, opcoes = {}) {
   const token = localStorage.getItem('token');
 
-  const headers = {
+  const cabecalhos = {
     'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(opcoes.headers || {}),
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    cabecalhos['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
+  const resposta = await fetch(`${URL_BASE_API}${endpoint}`, {
+    ...opcoes,
+    headers: cabecalhos,
   });
 
-  const contentType = response.headers.get('content-type');
-  let data = null;
-  if (contentType && contentType.includes('application/json')) {
-    data = await response.json();
+  const tipoConteudo = resposta.headers.get('content-type');
+  let dados = null;
+  if (tipoConteudo && tipoConteudo.includes('application/json')) {
+    dados = await resposta.json();
   }
 
-  if (!response.ok) {
-    if (response.status === 403 || response.status === 401) {
+  if (!resposta.ok) {
+    if (resposta.status === 403 || resposta.status === 401) {
       if (token && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.reload();
       }
     }
-    const errorMessage = data?.message || (typeof data === 'string' ? data : 'Erro na requisição');
-    throw new Error(errorMessage);
+    const mensagemErro = dados?.message || (typeof dados === 'string' ? dados : 'Erro na requisição');
+    throw new Error(mensagemErro);
   }
 
-  return data;
+  return dados;
 }
 
-export const authService = {
-  login: async (email, password) => {
-    const data = await apiFetch('/auth/login', {
+export const servicoAutenticacao = {
+  entrar: async (email, senha) => {
+    const dados = await requisitarApi('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, senha: password }),
+      body: JSON.stringify({ email, senha }),
     });
-    if (data && data.token) {
-      localStorage.setItem('token', data.token);
+    if (dados && dados.token) {
+      localStorage.setItem('token', dados.token);
       localStorage.setItem('user', JSON.stringify({
-        name: data.email ? data.email.split('@')[0] : 'Usuário',
-        email: data.email,
-        perfil: data.perfil
+        nome: dados.email ? dados.email.split('@')[0] : 'Usuário',
+        email: dados.email,
+        perfil: dados.perfil
       }));
     }
-    return data;
+    return dados;
   },
 
-  register: async (name, email, password) => {
-    const data = await apiFetch('/auth/register', {
+  cadastrar: async (nome, email, senha) => {
+    const dados = await requisitarApi('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
-        nome: name,
+        nome,
         email,
-        senha: password,
+        senha,
         perfil: 'CLIENTE'
       }),
     });
-    if (data && data.token) {
-      localStorage.setItem('token', data.token);
+    if (dados && dados.token) {
+      localStorage.setItem('token', dados.token);
       localStorage.setItem('user', JSON.stringify({
-        name: name || (data.email ? data.email.split('@')[0] : 'Usuário'),
-        email: data.email,
-        perfil: data.perfil
+        nome: nome || (dados.email ? dados.email.split('@')[0] : 'Usuário'),
+        email: dados.email,
+        perfil: dados.perfil
       }));
     }
-    return data;
+    return dados;
   },
 
-  logout: () => {
+  sair: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   },
 
-  getCurrentUser: () => {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+  obterUsuarioAtual: () => {
+    const usuarioStr = localStorage.getItem('user');
+    return usuarioStr ? JSON.parse(usuarioStr) : null;
   },
 
-  isAuthenticated: () => {
+  estaAutenticado: () => {
     return !!localStorage.getItem('token');
   },
 };
 
-export const orderService = {
-  getAllOrders: async () => {
-    return await apiFetch('/orders');
+export const servicoPedidos = {
+  obterTodosPedidos: async () => {
+    return await requisitarApi('/orders');
   },
 
-  getOrderById: async (id) => {
-    return await apiFetch(`/orders/${id}`);
+  obterPedidoPorId: async (id) => {
+    return await requisitarApi(`/orders/${id}`);
   },
 
-  createOrder: async (orderData) => {
-    return await apiFetch('/orders', {
+  criarPedido: async (dadosPedido) => {
+    return await requisitarApi('/orders', {
       method: 'POST',
-      body: JSON.stringify(orderData),
+      body: JSON.stringify(dadosPedido),
     });
   },
 
-  updateOrderStatus: async (id, status) => {
-    return await apiFetch(`/orders/${id}/status`, {
+  atualizarStatusPedido: async (id, status) => {
+    return await requisitarApi(`/orders/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
   },
 };
 
+// Aliases para compatibilidade se necessário
+export const authService = servicoAutenticacao;
+export const orderService = servicoPedidos;
+export const apiFetch = requisitarApi;

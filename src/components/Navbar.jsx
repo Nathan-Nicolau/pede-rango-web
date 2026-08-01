@@ -1,7 +1,9 @@
 import React from 'react';
 import { Utensils, LogOut, Plus, User } from 'lucide-react';
 
-export function Navbar({ user, onLogout, onOpenNewOrder }) {
+export function Navbar({ usuario, aoSair, aoAbrirNovoPedido }) {
+  const nomeExibicao = usuario?.nome || usuario?.name || usuario?.email || 'Usuário';
+
   return (
     <header style={{
       borderBottom: '1px solid var(--border-color)',
@@ -19,32 +21,32 @@ export function Navbar({ user, onLogout, onOpenNewOrder }) {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        {/* Brand */}
+        {/* Marca */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+            background: 'linear-gradient(135deg, #D30101 0%, #9e0000 100%)',
             padding: '10px',
             borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)'
+            boxShadow: '0 4px 12px rgba(211, 1, 1, 0.3)'
           }}>
             <Utensils color="#ffffff" size={24} />
           </div>
           <div>
             <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#f8fafc', margin: 0, letterSpacing: '-0.5px' }}>
-              FoodDelivery <span style={{ color: 'var(--primary-accent)', fontSize: '0.9rem', fontWeight: 600 }}>API</span>
+              FoodDelivery <span style={{ color: 'var(--primary-accent)', fontSize: '0.9rem', fontWeight: 600 }}>WEB</span>
             </h1>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Gestão de Pedidos em Tempo Real</p>
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Controles de Ação */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {user ? (
+          {usuario ? (
             <>
-              <button onClick={onOpenNewOrder} className="btn-primary">
+              <button onClick={aoAbrirNovoPedido} className="btn-primary">
                 <Plus size={18} /> Novo Pedido
               </button>
 
@@ -70,13 +72,13 @@ export function Navbar({ user, onLogout, onOpenNewOrder }) {
                     <User size={20} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#f8fafc' }}>{user.name}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{user.email}</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#f8fafc' }}>{nomeExibicao}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{usuario.email}</span>
                   </div>
                 </div>
 
                 <button
-                  onClick={onLogout}
+                  onClick={aoSair}
                   title="Sair da conta"
                   style={{
                     background: 'transparent',
@@ -89,7 +91,7 @@ export function Navbar({ user, onLogout, onOpenNewOrder }) {
                     alignItems: 'center',
                     transition: 'all 0.2s ease'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#D30101'}
                   onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
                   <LogOut size={18} />

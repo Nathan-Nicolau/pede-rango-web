@@ -1,24 +1,31 @@
 import React from 'react';
-import { X, Clock, MapPin, User, Package, CheckCircle2 } from 'lucide-react';
+import { X, Clock, MapPin, User, Package } from 'lucide-react';
 
-export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
-  if (!order) return null;
+export function OrderDetailModal({ pedido, aoFechar, aoAtualizarStatus }) {
+  if (!pedido) return null;
 
-  const STATUSES = ['RECEBIDO', 'EM_PREPARO', 'SAIU_PARA_ENTREGA', 'ENTREGUE', 'CANCELADO'];
+  const STATUS_POSSIDEIS = ['RECEBIDO', 'EM_PREPARO', 'SAIU_PARA_ENTREGA', 'ENTREGUE', 'CANCELADO'];
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
+  const formatarData = (dataStr) => {
+    if (!dataStr) return '-';
     try {
-      return new Date(dateStr).toLocaleString('pt-BR');
+      return new Date(dataStr).toLocaleString('pt-BR');
     } catch {
-      return dateStr;
+      return dataStr;
     }
   };
+
+  const listaItens = pedido.itens || pedido.items || [];
+  const valorTotal = Number(pedido.valorTotal ?? pedido.totalAmount ?? 0).toFixed(2);
+  const clienteNome = pedido.nomeCliente || pedido.customerName || 'Cliente sem nome';
+  const enderecoEntrega = pedido.enderecoEntrega || pedido.deliveryAddress || 'Endereço não informado';
+  const codigoExibicao = pedido.codigo || pedido.id;
+  const dataCriacao = pedido.criadoEm || pedido.createdAt;
 
   return (
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: '640px' }}>
-        {/* Header */}
+        {/* Cabeçalho */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -30,18 +37,18 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>
-                Pedido #{order.codigo || order.id}
+                Pedido #{codigoExibicao}
               </h2>
-              <span className={`status-badge status-${order.status}`}>
-                {order.status}
+              <span className={`status-badge status-${pedido.status}`}>
+                {pedido.status}
               </span>
             </div>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-              <Clock size={14} /> Criado em: {formatDate(order.criadoEm || order.createdAt)}
+              <Clock size={14} /> Criado em: {formatarData(dataCriacao)}
             </span>
           </div>
           <button
-            onClick={onClose}
+            onClick={aoFechar}
             style={{
               background: 'transparent',
               border: 'none',
@@ -54,7 +61,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
           </button>
         </div>
 
-        {/* Customer & Address Details */}
+        {/* Detalhes do Cliente e Endereço */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -69,35 +76,35 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
               <User size={16} /> Cliente
             </div>
-            <div style={{ fontWeight: 600, color: '#f8fafc' }}>{order.nomeCliente || order.customerName || 'Cliente sem nome'}</div>
+            <div style={{ fontWeight: 600, color: '#f8fafc' }}>{clienteNome}</div>
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
               <MapPin size={16} /> Endereço de Entrega
             </div>
-            <div style={{ fontWeight: 500, color: '#f8fafc', fontSize: '0.9rem' }}>{order.enderecoEntrega || order.deliveryAddress || 'Endereço não informado'}</div>
+            <div style={{ fontWeight: 500, color: '#f8fafc', fontSize: '0.9rem' }}>{enderecoEntrega}</div>
           </div>
         </div>
 
-        {/* Status Update Select */}
+        {/* Seletor de Atualização de Status */}
         <div style={{ marginBottom: '24px' }}>
           <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
             Atualizar Status do Pedido:
           </label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {STATUSES.map((st) => (
+            {STATUS_POSSIDEIS.map((st) => (
               <button
                 key={st}
-                onClick={() => onUpdateStatus(order.id, st)}
+                onClick={() => aoAtualizarStatus(pedido.id, st)}
                 style={{
                   padding: '8px 14px',
                   borderRadius: '8px',
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  border: order.status === st ? '2px solid var(--primary-accent)' : '1px solid var(--border-color)',
-                  backgroundColor: order.status === st ? 'rgba(249, 115, 22, 0.2)' : '#0f172a',
-                  color: order.status === st ? 'var(--primary-accent)' : 'var(--text-main)',
+                  border: pedido.status === st ? '2px solid var(--primary-accent)' : '1px solid var(--border-color)',
+                  backgroundColor: pedido.status === st ? 'rgba(211, 1, 1, 0.2)' : '#0f172a',
+                  color: pedido.status === st ? 'var(--primary-accent)' : 'var(--text-main)',
                   transition: 'all 0.2s ease'
                 }}
               >
@@ -107,10 +114,10 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
           </div>
         </div>
 
-        {/* Order Items Table */}
+        {/* Tabela de Itens do Pedido */}
         <div style={{ marginBottom: '24px' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Package size={18} /> Itens do Pedido ({(order.itens || order.items) ? (order.itens || order.items).length : 0})
+            <Package size={18} /> Itens do Pedido ({listaItens.length})
           </h3>
           <div style={{
             backgroundColor: '#0f172a',
@@ -128,17 +135,17 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
                 </tr>
               </thead>
               <tbody>
-                {(order.itens || order.items) && (order.itens || order.items).map((item, i) => {
-                  const name = item.nome || item.name;
-                  const qty = item.quantidade ?? item.quantity ?? 1;
-                  const unitPrice = item.precoUnitario ?? item.unitPrice ?? 0;
-                  const subtotal = item.subtotal ?? (qty * unitPrice);
+                {listaItens.map((item, i) => {
+                  const nome = item.nome || item.name;
+                  const qtd = item.quantidade ?? item.quantity ?? 1;
+                  const precoUnitario = item.precoUnitario ?? item.unitPrice ?? 0;
+                  const subtotal = item.subtotal ?? (qtd * precoUnitario);
 
                   return (
-                    <tr key={item.id || i} style={{ borderBottom: i < (order.itens || order.items).length - 1 ? '1px solid #334155' : 'none' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 500 }}>{name}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>{qty}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>R$ {Number(unitPrice).toFixed(2)}</td>
+                    <tr key={item.id || i} style={{ borderBottom: i < listaItens.length - 1 ? '1px solid #334155' : 'none' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 500 }}>{nome}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>{qtd}</td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>R$ {Number(precoUnitario).toFixed(2)}</td>
                       <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--primary-accent)' }}>
                         R$ {Number(subtotal).toFixed(2)}
                       </td>
@@ -150,7 +157,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
           </div>
         </div>
 
-        {/* Total amount summary */}
+        {/* Resumo do Valor Total */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -162,7 +169,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }) {
         }}>
           <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Valor Total:</span>
           <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary-accent)' }}>
-            R$ {Number(order.valorTotal ?? order.totalAmount ?? 0).toFixed(2)}
+            R$ {valorTotal}
           </span>
         </div>
       </div>
