@@ -55,7 +55,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
         {/* Tab Toggle */}
         <div style={{
           display: 'flex',
-          backgroundColor: '#0f172a',
+          backgroundColor: '#141417',
           padding: '4px',
           borderRadius: '12px',
           marginBottom: '24px',
@@ -71,7 +71,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
               borderRadius: '8px',
               fontWeight: 600,
               cursor: 'pointer',
-              backgroundColor: ehModoLogin ? '#1e293b' : 'transparent',
+              backgroundColor: ehModoLogin ? '#26262d' : 'transparent',
               color: ehModoLogin ? 'var(--primary-accent)' : 'var(--text-secondary)',
               transition: 'all 0.2s ease',
               display: 'flex',
@@ -92,7 +92,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
               borderRadius: '8px',
               fontWeight: 600,
               cursor: 'pointer',
-              backgroundColor: !ehModoLogin ? '#1e293b' : 'transparent',
+              backgroundColor: !ehModoLogin ? '#26262d' : 'transparent',
               color: !ehModoLogin ? 'var(--primary-accent)' : 'var(--text-secondary)',
               transition: 'all 0.2s ease',
               display: 'flex',

@@ -64,7 +64,7 @@ export function OrderStats({ pedidos = [] }) {
             </div>
           </div>
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: '#141417',
             padding: '12px',
             borderRadius: '12px',
             border: `1px solid ${stat.corBorda}`

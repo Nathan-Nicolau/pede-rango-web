@@ -67,7 +67,7 @@ export function OrderDetailModal({ pedido, aoFechar, aoAtualizarStatus }) {
           gridTemplateColumns: '1fr 1fr',
           gap: '16px',
           marginBottom: '24px',
-          backgroundColor: '#0f172a',
+          backgroundColor: '#141417',
           padding: '16px',
           borderRadius: '12px',
           border: '1px solid var(--border-color)'
@@ -103,7 +103,7 @@ export function OrderDetailModal({ pedido, aoFechar, aoAtualizarStatus }) {
                   fontWeight: 600,
                   cursor: 'pointer',
                   border: pedido.status === st ? '2px solid var(--primary-accent)' : '1px solid var(--border-color)',
-                  backgroundColor: pedido.status === st ? 'rgba(211, 1, 1, 0.2)' : '#0f172a',
+                  backgroundColor: pedido.status === st ? 'rgba(211, 1, 1, 0.2)' : '#141417',
                   color: pedido.status === st ? 'var(--primary-accent)' : 'var(--text-main)',
                   transition: 'all 0.2s ease'
                 }}
@@ -120,14 +120,14 @@ export function OrderDetailModal({ pedido, aoFechar, aoAtualizarStatus }) {
             <Package size={18} /> Itens do Pedido ({listaItens.length})
           </h3>
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: '#141417',
             borderRadius: '12px',
             border: '1px solid var(--border-color)',
             overflow: 'hidden'
           }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: '#1e293b' }}>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: '#24242b' }}>
                   <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Item</th>
                   <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', textAlign: 'center' }}>Qtd</th>
                   <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', textAlign: 'right' }}>Unitário</th>
@@ -142,7 +142,7 @@ export function OrderDetailModal({ pedido, aoFechar, aoAtualizarStatus }) {
                   const subtotal = item.subtotal ?? (qtd * precoUnitario);
 
                   return (
-                    <tr key={item.id || i} style={{ borderBottom: i < listaItens.length - 1 ? '1px solid #334155' : 'none' }}>
+                    <tr key={item.id || i} style={{ borderBottom: i < listaItens.length - 1 ? '1px solid #2e2e35' : 'none' }}>
                       <td style={{ padding: '12px 16px', fontWeight: 500 }}>{nome}</td>
                       <td style={{ padding: '12px 16px', textAlign: 'center' }}>{qtd}</td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>R$ {Number(precoUnitario).toFixed(2)}</td>
@@ -163,7 +163,7 @@ export function OrderDetailModal({ pedido, aoFechar, aoAtualizarStatus }) {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '16px',
-          backgroundColor: '#0f172a',
+          backgroundColor: '#141417',
           borderRadius: '12px',
           border: '1px solid var(--border-color)'
         }}>

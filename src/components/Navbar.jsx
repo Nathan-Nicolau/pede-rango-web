@@ -7,7 +7,7 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido }) {
   return (
     <header style={{
       borderBottom: '1px solid var(--border-color)',
-      backgroundColor: 'rgba(30, 41, 59, 0.95)',
+      backgroundColor: 'rgba(28, 28, 32, 0.95)',
       backdropFilter: 'blur(8px)',
       position: 'sticky',
       top: 0,
@@ -62,7 +62,7 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido }) {
                     width: '36px',
                     height: '36px',
                     borderRadius: '50%',
-                    backgroundColor: '#334155',
+                    backgroundColor: '#27272e',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

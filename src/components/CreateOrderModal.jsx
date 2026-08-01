@@ -193,7 +193,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido }) {
                   gridTemplateColumns: '2fr 1fr 1fr auto',
                   gap: '10px',
                   alignItems: 'center',
-                  backgroundColor: '#0f172a',
+                  backgroundColor: '#141417',
                   padding: '12px',
                   borderRadius: '10px',
                   border: '1px solid var(--border-color)'
@@ -245,7 +245,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido }) {
             justifyContent: 'space-between',
             alignItems: 'center',
             padding: '16px',
-            backgroundColor: '#0f172a',
+            backgroundColor: '#141417',
             borderRadius: '12px',
             border: '1px solid var(--border-color)',
             marginBottom: '24px'

@@ -41,7 +41,7 @@ export function OrderCard({ pedido, aoClicar, aoAtualizarStatus }) {
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-3px)';
-        e.currentTarget.style.boxShadow = '0 12px 30px rgba(0, 0, 0, 0.4)';
+        e.currentTarget.style.boxShadow = '0 12px 30px rgba(0, 0, 0, 0.5)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
@@ -79,7 +79,7 @@ export function OrderCard({ pedido, aoClicar, aoAtualizarStatus }) {
 
       {/* Resumo dos Itens & Total */}
       <div style={{
-        backgroundColor: '#0f172a',
+        backgroundColor: '#141417',
         padding: '10px 14px',
         borderRadius: '10px',
         border: '1px solid var(--border-color)',
@@ -105,7 +105,7 @@ export function OrderCard({ pedido, aoClicar, aoAtualizarStatus }) {
           value={pedido.status}
           onChange={aoAlterarStatusSelect}
           style={{
-            backgroundColor: '#1e293b',
+            backgroundColor: '#24242b',
             color: 'var(--text-main)',
             border: '1px solid var(--border-color)',
             borderRadius: '8px',
