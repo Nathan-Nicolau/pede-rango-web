@@ -5,6 +5,7 @@ export function OrderStats({ pedidos = [] }) {
   const totalPedidos = pedidos.length;
   const recebidos = pedidos.filter(p => p.status === 'RECEBIDO').length;
   const emPreparo = pedidos.filter(p => p.status === 'EM_PREPARO').length;
+  const prontoParaEntrega = pedidos.filter(p => p.status === 'PRONTO_PARA_ENTREGA').length
   const emEntrega = pedidos.filter(p => p.status === 'SAIU_PARA_ENTREGA').length;
   const entregues = pedidos.filter(p => p.status === 'ENTREGUE').length;
 
@@ -26,6 +27,12 @@ export function OrderStats({ pedidos = [] }) {
       valor: emEntrega,
       icone: <Truck size={22} color="#c084fc" />,
       corBorda: 'rgba(168, 85, 247, 0.3)'
+    },
+    {
+      titulo: 'Pronto para Entrega',
+      valor: prontoParaEntrega,
+      icone: <Truck size={22} color="0031F6E3" />,
+      corBorda: 'rgb(0 49 246 / 0.89)'
     },
     {
       titulo: 'Entregues',
@@ -59,12 +66,12 @@ export function OrderStats({ pedidos = [] }) {
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
               {stat.titulo}
             </span>
-            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
               {stat.valor}
             </div>
           </div>
           <div style={{
-            backgroundColor: '#141417',
+            backgroundColor: 'var(--bg-input)',
             padding: '12px',
             borderRadius: '12px',
             border: `1px solid ${stat.corBorda}`
