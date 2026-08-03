@@ -52,43 +52,49 @@ export function labelPerfil(perfil) {
 }
 
 /**
- * Formata uma data/hora no fuso horário do Brasil (America/Sao_Paulo).
+ * Formata uma data/hora recebida da API (LocalDateTime sem offset = hora local do Brasil).
+ * NÃO adiciona 'Z' pois a string já está no horário de Brasília.
  */
 export function formatarDataHora(dataStr) {
   if (!dataStr) return '-';
   try {
-    let str = String(dataStr);
-    if (str.includes('T') && !str.includes('Z') && !str.includes('+') && !str.includes('-')) {
-      str = str + 'Z';
+    const str = String(dataStr);
+    // LocalDateTime da API: "2026-08-03T00:03:15" — sem Z, sem offset.
+    // Extraímos as partes diretamente para evitar conversão de timezone.
+    const semOffset = str.replace('Z', '').replace(/[+-]\d{2}:\d{2}$/, '');
+    const partes = semOffset.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+    if (partes) {
+      const [, ano, mes, dia, hora, min, seg] = partes;
+      return `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
     }
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return new Date(dataStr).toLocaleString('pt-BR');
-    return d.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+    // Fallback: tenta parse normal (sem conversão de tz)
+    const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      });
+    }
+    return str;
   } catch {
     return String(dataStr);
   }
 }
 
 /**
- * Formata apenas o horário (HH:mm) no fuso horário local.
+ * Formata apenas o horário (HH:mm) de um LocalDateTime da API (sem conversão de timezone).
  */
 export function formatarHora(dataStr) {
   if (!dataStr) return '-';
   try {
-    let str = String(dataStr);
-    if (str.includes('T') && !str.includes('Z') && !str.includes('+') && !str.includes('-')) {
-      str = str + 'Z';
+    const str = String(dataStr);
+    const semOffset = str.replace('Z', '').replace(/[+-]\d{2}:\d{2}$/, '');
+    const partes = semOffset.match(/^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2})/);
+    if (partes) {
+      return `${partes[1]}:${partes[2]}`;
     }
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return new Date(dataStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return str;
   } catch {
     return String(dataStr);
   }
@@ -147,7 +153,7 @@ export function podeCancelarPedido(pedido, perfil) {
   if (pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO') return false;
 
   if (perfil === 'CLIENTE') {
-    return pedido.status === 'RECEBIDO' || pedido.status === 'EM_PREPARO';
+    return ['RECEBIDO', 'EM_PREPARO', 'PRONTO_PARA_ENTREGA', 'SAIU_PARA_ENTREGA'].includes(pedido.status);
   }
 
   if (perfil === 'ENTREGADOR') {
