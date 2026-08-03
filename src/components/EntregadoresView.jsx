@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { servicoEntregadores } from '../services/api';
+import { servicoEntregadores, servicoPedidos } from '../services/api';
 import { PaginationControls } from './PaginationControls';
 import { CreateEntregadorModal } from './CreateEntregadorModal';
 import { Truck, Plus, Search, User, Phone, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 
 export function EntregadoresView() {
   const [entregadores, definirEntregadores] = useState([]);
+  const [pedidos, definirPedidos] = useState([]);
   const [carregando, definirCarregando] = useState(false);
   const [erro, definirErro] = useState(null);
 
@@ -20,17 +21,22 @@ export function EntregadoresView() {
   const [modalCriacaoAberto, definirModalCriacaoAberto] = useState(false);
 
   useEffect(() => {
-    carregarEntregadores();
+    carregarDados();
   }, [pagina, tamanho]);
 
-  const carregarEntregadores = async () => {
+  const carregarDados = async () => {
     definirCarregando(true);
     definirErro(null);
     try {
-      const dados = await servicoEntregadores.obterTodosPaginado(pagina, tamanho);
-      definirEntregadores(dados.content || []);
-      definirTotalPaginas(dados.totalPages || 1);
-      definirTotalElementos(dados.totalElements || 0);
+      // 1. Carrega entregadores paginados
+      const dadosEntregadores = await servicoEntregadores.obterTodosPaginado(pagina, tamanho);
+      definirEntregadores(dadosEntregadores.content || []);
+      definirTotalPaginas(dadosEntregadores.totalPages || 1);
+      definirTotalElementos(dadosEntregadores.totalElements || 0);
+
+      // 2. Carrega pedidos para verificar entregadores em rota (status SAIU_PARA_ENTREGA)
+      const dadosPedidos = await servicoPedidos.obterTodosPedidosPaginado(0, 100);
+      definirPedidos(Array.isArray(dadosPedidos.content) ? dadosPedidos.content : []);
     } catch (err) {
       definirErro(err.message || 'Erro ao carregar lista de entregadores.');
     } finally {
@@ -38,17 +44,17 @@ export function EntregadoresView() {
     }
   };
 
-  const aoAlternarDisponibilidade = async (id, statusAtual) => {
-    try {
-      const entregadorAtualizado = await servicoEntregadores.alternarDisponibilidade(id, !statusAtual);
-      definirEntregadores(entregadores.map(e => e.id === id ? entregadorAtualizado : e));
-    } catch (err) {
-      alert('Erro ao alterar disponibilidade: ' + err.message);
-    }
+  const aoCriarComSucesso = () => {
+    carregarDados();
   };
 
-  const aoCriarComSucesso = (novoEntregador) => {
-    carregarEntregadores();
+  // Verifica se o entregador possui algum pedido em rota de entrega no momento
+  const estaEmRota = (entregador) => {
+    return pedidos.some(p =>
+      p.status === 'SAIU_PARA_ENTREGA' &&
+      ((p.entregadorId && String(p.entregadorId) === String(entregador.id)) ||
+       (p.nomeEntregador && entregador.nome && p.nomeEntregador.toLowerCase() === entregador.nome.toLowerCase()))
+    );
   };
 
   const entregadoresFiltrados = entregadores.filter(e => {
@@ -66,7 +72,7 @@ export function EntregadoresView() {
       {/* Topo da Aba */}
       <div style={{
         display: 'flex',
-        justifyContent: 'space-between',
+        justify: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '16px',
@@ -77,7 +83,7 @@ export function EntregadoresView() {
             <Truck size={26} color="var(--primary-accent)" /> Gestão de Entregadores
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-            Consulte a frota, altere disponibilidades e cadastre novos entregadores.
+            Consulte a frota, status de rota de entrega e cadastre novos entregadores.
           </p>
         </div>
 
@@ -89,7 +95,7 @@ export function EntregadoresView() {
       {/* Barra de Busca e Atualizar */}
       <div style={{
         display: 'flex',
-        justifyContent: 'space-between',
+        justify: 'space-between',
         alignItems: 'center',
         gap: '16px',
         marginBottom: '24px',
@@ -110,7 +116,7 @@ export function EntregadoresView() {
           />
         </div>
 
-        <button onClick={carregarEntregadores} className="btn-secondary" title="Atualizar entregadores">
+        <button onClick={carregarDados} className="btn-secondary" title="Atualizar entregadores">
           <RefreshCw size={16} className={carregando ? 'spin' : ''} />
         </button>
       </div>
@@ -133,96 +139,123 @@ export function EntregadoresView() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {entregadoresFiltrados.map((entregador) => (
-            <div
-              key={entregador.id}
-              className="glass-panel"
-              style={{
-                borderRadius: '16px',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '50%',
-                    backgroundColor: entregador.disponivel ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100, 116, 139, 0.15)',
-                    color: entregador.disponivel ? '#10b981' : '#64748b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700
-                  }}>
-                    <User size={22} />
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
-                      {entregador.nome || `Entregador #${entregador.id}`}
-                    </h4>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      {entregador.email || 'Sem e-mail'}
-                    </span>
-                  </div>
-                </div>
+          {entregadoresFiltrados.map((entregador) => {
+            const emRota = estaEmRota(entregador);
 
-                <span style={{
-                  padding: '4px 10px',
-                  borderRadius: '999px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  backgroundColor: entregador.disponivel ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: entregador.disponivel ? '#34d399' : '#f87171',
-                  border: `1px solid ${entregador.disponivel ? 'rgba(52, 211, 153, 0.3)' : 'rgba(248, 113, 113, 0.3)'}`
-                }}>
-                  {entregador.disponivel ? 'ONLINE' : 'OFFLINE'}
-                </span>
-              </div>
-
-              {/* Informações de Veículo e Telefone */}
-              <div style={{
-                backgroundColor: 'var(--bg-input)',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-color)',
-                fontSize: '0.85rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-main)' }}>
-                  <span><Truck size={14} style={{ display: 'inline', marginRight: '6px' }} /> Veículo:</span>
-                  <strong>{entregador.veiculo} {entregador.placa ? `(${entregador.placa})` : ''}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-                  <span><Phone size={14} style={{ display: 'inline', marginRight: '6px' }} /> Telefone:</span>
-                  <span>{entregador.telefone}</span>
-                </div>
-              </div>
-
-              {/* Ação de Alterar Disponibilidade */}
-              <button
-                type="button"
-                onClick={() => aoAlternarDisponibilidade(entregador.id, entregador.disponivel)}
-                className="btn-secondary"
-                style={{ justifyContent: 'center', padding: '8px', fontSize: '0.85rem' }}
+            return (
+              <div
+                key={entregador.id}
+                className="glass-panel"
+                style={{
+                  borderRadius: '16px',
+                  padding: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px'
+                }}
               >
-                {entregador.disponivel ? (
-                  <>
-                    <XCircle size={16} color="#ef4444" /> Ficar Offline
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={16} color="#10b981" /> Ficar Online / Disponível
-                  </>
-                )}
-              </button>
-            </div>
-          ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '50%',
+                      backgroundColor: emRota
+                        ? 'rgba(168, 85, 247, 0.15)'
+                        : entregador.disponivel ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100, 116, 139, 0.15)',
+                      color: emRota
+                        ? '#c084fc'
+                        : entregador.disponivel ? '#10b981' : '#64748b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 700
+                    }}>
+                      <User size={22} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                        {entregador.nome || `Entregador #${entregador.id}`}
+                      </h4>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        {entregador.email || 'Sem e-mail'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    backgroundColor: emRota
+                      ? 'rgba(168, 85, 247, 0.15)'
+                      : entregador.disponivel ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    color: emRota
+                      ? '#c084fc'
+                      : entregador.disponivel ? '#34d399' : '#f87171',
+                    border: `1px solid ${emRota ? 'rgba(192, 132, 252, 0.3)' : entregador.disponivel ? 'rgba(52, 211, 153, 0.3)' : 'rgba(248, 113, 113, 0.3)'}`
+                  }}>
+                    {emRota ? 'EM ROTA' : entregador.disponivel ? 'ONLINE' : 'OFFLINE'}
+                  </span>
+                </div>
+
+                {/* Informações de Veículo e Telefone */}
+                <div style={{
+                  backgroundColor: 'var(--bg-input)',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-main)' }}>
+                    <span><Truck size={14} style={{ display: 'inline', marginRight: '6px' }} /> Veículo:</span>
+                    <strong>{entregador.veiculo} {entregador.placa ? `(${entregador.placa})` : ''}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                    <span><Phone size={14} style={{ display: 'inline', marginRight: '6px' }} /> Telefone:</span>
+                    <span>{entregador.telefone}</span>
+                  </div>
+                </div>
+
+                {/* Label Informativo para o Perfil ADMIN (Sem botão de alterar status) */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  gap: '8px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  backgroundColor: emRota
+                    ? 'rgba(168, 85, 247, 0.12)'
+                    : entregador.disponivel ? 'rgba(16, 185, 129, 0.12)' : 'rgba(100, 116, 139, 0.12)',
+                  color: emRota
+                    ? '#c084fc'
+                    : entregador.disponivel ? '#34d399' : '#94a3b8',
+                  border: `1px solid ${emRota ? 'rgba(192, 132, 252, 0.3)' : entregador.disponivel ? 'rgba(52, 211, 153, 0.3)' : 'rgba(148, 163, 184, 0.3)'}`
+                }}>
+                  {emRota ? (
+                    <>
+                      <Truck size={16} color="#c084fc" /> 🛵 Em Rota de Entrega
+                    </>
+                  ) : entregador.disponivel ? (
+                    <>
+                      <CheckCircle2 size={16} color="#34d399" /> 🟢 Disponível para Entregas
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={16} color="#94a3b8" /> ⚪ Offline (Indisponível)
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

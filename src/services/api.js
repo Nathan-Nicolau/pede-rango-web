@@ -66,20 +66,66 @@ export const servicoAutenticacao = {
     return dados;
   },
 
-  cadastrar: async (nome, email, senha) => {
+  checarEmailExiste: async (email) => {
+    if (!email || !email.includes('@')) return false;
+    try {
+      // Backend retorna { existe: true } ou { existe: false }
+      const resposta = await requisitarApi(`/auth/checar-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+      return resposta?.existe === true;
+    } catch {
+      return false;
+    }
+  },
+
+  checarCpfExiste: async (cpf) => {
+    if (!cpf) return false;
+    try {
+      const resp = await requisitarApi(`/auth/checar-cpf?cpf=${encodeURIComponent(cpf.trim())}`);
+      return resp?.existe === true;
+    } catch {
+      return false;
+    }
+  },
+
+  checarTelefoneExiste: async (telefone) => {
+    if (!telefone) return false;
+    try {
+      const resp = await requisitarApi(`/auth/checar-telefone?telefone=${encodeURIComponent(telefone.trim())}`);
+      return resp?.existe === true;
+    } catch {
+      return false;
+    }
+  },
+
+  cadastrar: async (dadosRegistro, emailParam, senhaParam) => {
+    let payload;
+    if (typeof dadosRegistro === 'object' && dadosRegistro !== null) {
+      payload = {
+        nome: dadosRegistro.nome ? dadosRegistro.nome.trim() : '',
+        email: dadosRegistro.email ? dadosRegistro.email.trim() : '',
+        senha: dadosRegistro.senha,
+        perfil: 'CLIENTE',
+        cpf: dadosRegistro.cpf,
+        telefone: dadosRegistro.telefone,
+        enderecoPadrao: dadosRegistro.enderecoPadrao
+      };
+    } else {
+      payload = {
+        nome: dadosRegistro ? String(dadosRegistro).trim() : '',
+        email: emailParam ? String(emailParam).trim() : '',
+        senha: senhaParam,
+        perfil: 'CLIENTE'
+      };
+    }
+
     const dados = await requisitarApi('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({
-        nome: nome ? nome.trim() : '',
-        email: email ? email.trim() : '',
-        senha,
-        perfil: 'CLIENTE'
-      }),
+      body: JSON.stringify(payload),
     });
     if (dados && dados.token) {
       localStorage.setItem('token', dados.token);
       localStorage.setItem('user', JSON.stringify({
-        nome: nome || (dados.email ? dados.email.split('@')[0] : 'Usuário'),
+        nome: payload.nome || (dados.email ? dados.email.split('@')[0] : 'Usuário'),
         email: dados.email,
         perfil: dados.perfil
       }));
@@ -123,7 +169,24 @@ export const servicoPedidos = {
     if (resposta && Array.isArray(resposta.content)) {
       return resposta;
     }
-    // Fallback caso backend retorne array direto
+    const content = Array.isArray(resposta) ? resposta : [];
+    return {
+      content,
+      totalElements: content.length,
+      totalPages: Math.ceil(content.length / tamanho) || 1,
+      number: pagina
+    };
+  },
+
+  obterMeusPedidosPaginado: async (pagina = 0, tamanho = 10, status = null) => {
+    let url = `/pedidos/meus-pedidos?page=${pagina}&size=${tamanho}`;
+    if (status && status !== 'ALL') {
+      url += `&status=${status}`;
+    }
+    const resposta = await requisitarApi(url);
+    if (resposta && Array.isArray(resposta.content)) {
+      return resposta;
+    }
     const content = Array.isArray(resposta) ? resposta : [];
     return {
       content,
@@ -187,6 +250,14 @@ export const servicoEntregadores = {
 
   obterPorId: async (id) => {
     return await requisitarApi(`/entregadores/${id}`);
+  },
+
+  obterPorEmail: async (email) => {
+    return await requisitarApi(`/entregadores/email/${encodeURIComponent(email.trim())}`);
+  },
+
+  atualizarTelefone: async (id, telefone) => {
+    return await requisitarApi(`/entregadores/${id}?telefone=${encodeURIComponent(telefone.trim())}`, { method: 'PUT' });
   },
 
   cadastrar: async (dadosEntregador) => {
@@ -343,6 +414,17 @@ export const servicoClientes = {
 
   obterPorId: async (id) => {
     return await requisitarApi(`/clientes/${id}`);
+  },
+
+  obterPorEmail: async (email) => {
+    return await requisitarApi(`/clientes/email/${encodeURIComponent(email.trim())}`);
+  },
+
+  atualizar: async (id, telefone, enderecoPadrao) => {
+    let url = `/clientes/${id}?`;
+    if (telefone) url += `telefone=${encodeURIComponent(telefone.trim())}&`;
+    if (enderecoPadrao) url += `enderecoPadrao=${encodeURIComponent(enderecoPadrao.trim())}`;
+    return await requisitarApi(url, { method: 'PUT' });
   },
 
   cadastrar: async (dadosCliente) => {

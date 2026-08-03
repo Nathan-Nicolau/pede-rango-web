@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { servicoCancelamentos } from '../services/api';
 import { PaginationControls } from './PaginationControls';
 import { XCircle, Search, Filter, Clock, User, FileText, AlertTriangle, RefreshCw } from 'lucide-react';
-import { labelStatus, labelMotivoCancelamento, MOTIVO_CANCELAMENTO_LABELS } from '../utils/statusLabels';
+import { labelStatus, labelMotivoCancelamento, MOTIVO_CANCELAMENTO_LABELS, formatarDataHora } from '../utils/statusLabels';
 
 export function CancelamentosView() {
   const [cancelamentos, definirCancelamentos] = useState([]);
@@ -199,8 +199,8 @@ export function CancelamentosView() {
                     </div>
                   )}
                   {canc?.canceladoEm && (
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '2px' }}>
-                      <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} /> Data/Hora: {formatarData(canc.canceladoEm)}
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: '2px' }}>
+                      <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} /> <strong>Data de Cancelamento:</strong> {formatarDataHora(canc.canceladoEm)}
                     </div>
                   )}
                 </div>

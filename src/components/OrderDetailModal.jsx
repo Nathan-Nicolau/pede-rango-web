@@ -1,22 +1,12 @@
-import React from 'react';
-import { X, Clock, MapPin, User, Package } from 'lucide-react';
-import { labelStatus, LISTA_STATUS_PEDIDO } from '../utils/statusLabels';
+import { labelStatus, obterOpcoesStatusProximos, podeAlterarStatusPedido, formatarDataHora, labelMotivoCancelamento } from '../utils/statusLabels';
+import { X, Clock, MapPin, User, Package, PackageCheck, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
 
 export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus }) {
   if (!pedido) return null;
 
   const perfil = usuario?.perfil || 'CLIENTE';
-  const statusBloqueado = ['ENTREGUE', 'RECEBIDO', 'CANCELADO'].includes(pedido.status);
-  const podeAlterarStatus = (perfil === 'ADMIN' || perfil === 'ENTREGADOR') && !statusBloqueado;
-
-  const formatarData = (dataStr) => {
-    if (!dataStr) return '-';
-    try {
-      return new Date(dataStr).toLocaleString('pt-BR');
-    } catch {
-      return dataStr;
-    }
-  };
+  const podeAlterar = podeAlterarStatusPedido(pedido, perfil);
+  const opcoesProximas = obterOpcoesStatusProximos(pedido.status);
 
   const listaItens = pedido.itens || pedido.items || [];
   const valorTotal = Number(pedido.valorTotal ?? pedido.totalAmount ?? 0).toFixed(2);
@@ -24,11 +14,12 @@ export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus 
   const enderecoEntrega = pedido.enderecoEntrega || pedido.deliveryAddress || 'Endereço não informado';
   const codigoExibicao = pedido.codigo || pedido.id;
   const dataCriacao = pedido.criadoEm || pedido.createdAt;
+  const dataEntrega = pedido.dataEntrega || pedido.deliveredAt;
 
   return (
     <div className="modal-overlay" onClick={aoFechar} style={{ padding: '16px' }}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
-        {/* Cabeçalho com Alinhamento Perfeito (Evita Sobreposição com Botão Fechar) */}
+        {/* Cabeçalho com Alinhamento Perfeito */}
         <div style={{
           display: 'flex',
           justify: 'space-between',
@@ -39,17 +30,31 @@ export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus 
           borderBottom: '1px solid var(--border-color)'
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
               <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0, color: 'var(--text-main)', wordBreak: 'break-all' }}>
                 Pedido #{codigoExibicao}
               </h2>
-              <span className={`status-badge status-${pedido.status}`} style={{ flexShrink: 0 }}>
+              <span className={`status-badge status-${pedido.status}`} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                {pedido.status === 'PRONTO_PARA_ENTREGA' && <PackageCheck size={14} color="#22d3ee" />}
                 {labelStatus(pedido.status)}
               </span>
             </div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <Clock size={14} /> Criado em: {formatarData(dataCriacao)}
-            </span>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Clock size={14} color="var(--primary-accent)" /> <span><strong>Criado em:</strong> {formatarDataHora(dataCriacao)}</span>
+              </div>
+              {pedido.status === 'ENTREGUE' && dataEntrega && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#34d399', fontWeight: 600 }}>
+                  <CheckCircle2 size={14} color="#34d399" /> <span><strong>Entregue em:</strong> {formatarDataHora(dataEntrega)}</span>
+                </div>
+              )}
+              {pedido.status === 'CANCELADO' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f87171', fontWeight: 600 }}>
+                  <AlertTriangle size={14} color="#f87171" /> <span><strong>Cancelado em:</strong> {formatarDataHora(pedido.cancelamento?.canceladoEm || pedido.atualizadoEm)}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <button
@@ -59,8 +64,8 @@ export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus 
               border: '1px solid var(--border-color)',
               color: 'var(--text-secondary)',
               cursor: 'pointer',
-              width: '36px',
-              height: '36px',
+              width: '34px',
+              height: '34px',
               borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
@@ -76,39 +81,69 @@ export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus 
           </button>
         </div>
 
-        {/* Detalhes do Cliente e Endereço */}
+        {/* Detalhes do Cancelamento (quando cancelado) */}
+        {pedido.status === 'CANCELADO' && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '12px',
+            padding: '14px 16px',
+            marginBottom: '20px',
+            fontSize: '0.88rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}>
+            <div style={{ color: '#f87171', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangle size={16} /> Motivo do Cancelamento: {labelMotivoCancelamento(pedido.cancelamento?.motivo)}
+            </div>
+            {pedido.cancelamento?.observacoes && (
+              <div style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>
+                <FileText size={14} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                Observações: "{pedido.cancelamento.observacoes}"
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Dados do Cliente e Endereço */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '16px',
-          marginBottom: '24px',
+          gap: '12px',
+          marginBottom: '20px',
           backgroundColor: 'var(--bg-input)',
-          padding: '16px',
+          padding: '14px',
           borderRadius: '12px',
           border: '1px solid var(--border-color)'
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-              <User size={16} /> Cliente
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>
+              Cliente
             </div>
-            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{clienteNome}</div>
+            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <User size={15} color="var(--primary-accent)" /> {clienteNome}
+            </div>
           </div>
+
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-              <MapPin size={16} /> Endereço de Entrega
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>
+              Endereço de Entrega
             </div>
-            <div style={{ fontWeight: 500, color: 'var(--text-main)', fontSize: '0.9rem' }}>{enderecoEntrega}</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <MapPin size={15} color="var(--text-secondary)" /> {enderecoEntrega}
+            </div>
           </div>
         </div>
 
-        {/* Seletor de Atualização de Status */}
+        {/* Seção de Troca de Status (Permite apenas avançar o fluxo) */}
         <div style={{ marginBottom: '24px' }}>
           <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            Status do Pedido:
+            Avançar Status do Pedido:
           </label>
-          {podeAlterarStatus ? (
+          {podeAlterar && opcoesProximas.length > 0 ? (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {LISTA_STATUS_PEDIDO.map(({ value, label }) => (
+              {opcoesProximas.map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => aoAtualizarStatus(pedido.id, value)}
@@ -186,18 +221,19 @@ export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus 
           </div>
         </div>
 
-        {/* Resumo do Valor Total (com Espaçamento Adequado) */}
+        {/* Rodapé com Valor Total */}
         <div style={{
           display: 'flex',
           justify: 'space-between',
           alignItems: 'center',
-          padding: '16px 20px',
-          backgroundColor: 'var(--bg-input)',
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)'
+          paddingTop: '16px',
+          borderTop: '1px solid var(--border-color)',
+          gap: '12px'
         }}>
-          <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Valor Total:</span>
-          <span style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary-accent)', marginLeft: '12px' }}>
+          <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>
+            Valor Total:
+          </span>
+          <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary-accent)' }}>
             R$ {valorTotal}
           </span>
         </div>

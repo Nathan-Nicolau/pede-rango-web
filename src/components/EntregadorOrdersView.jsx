@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { servicoPedidos, servicoEntregadores } from '../services/api';
 import { PaginationControls } from './PaginationControls';
-import { Truck, CheckCircle2, Clock, MapPin, Package, ArrowRight, RefreshCw, AlertTriangle, ShieldCheck, UserCheck } from 'lucide-react';
+import { CancelOrderModal } from './CancelOrderModal';
+import { Truck, CheckCircle2, Clock, MapPin, Package, ArrowRight, RefreshCw, AlertTriangle, ShieldCheck, UserCheck, XCircle } from 'lucide-react';
 import { labelStatus } from '../utils/statusLabels';
 
 export function EntregadorOrdersView({ usuario }) {
@@ -13,6 +14,7 @@ export function EntregadorOrdersView({ usuario }) {
   const [alternandoStatus, setAlternandoStatus] = useState(false);
   const [erro, setErro] = useState(null);
   const [abaInterna, setAbaInterna] = useState('DISPONIVEIS'); // 'DISPONIVEIS' | 'MINHAS_ENTREGAS'
+  const [pedidoParaCancelar, setPedidoParaCancelar] = useState(null);
 
   useEffect(() => {
     carregarDados();
@@ -100,31 +102,29 @@ export function EntregadorOrdersView({ usuario }) {
       await servicoPedidos.atualizarStatusPedido(pedidoId, 'ENTREGUE');
       await carregarDados();
     } catch (err) {
-      alert('Erro ao finalizar entrega: ' + err.message);
+      alert('Erro ao concluir entrega: ' + err.message);
     } finally {
       setProcessandoId(null);
     }
   };
 
-  // 1. Pedidos disponíveis que podem ser "pegos" para entrega: APENAS PRONTO_PARA_ENTREGA
-  const disponiveisParaEntrega = pedidos.filter(p =>
-    p.status === 'PRONTO_PARA_ENTREGA'
-  );
+  // Pedidos disponíveis para o entregador pegar ("PRONTO_PARA_ENTREGA")
+  const disponiveisParaEntrega = pedidos.filter(p => p.status === 'PRONTO_PARA_ENTREGA');
 
-  // 2. Histórico de entregas do próprio entregador em rota (SAIU_PARA_ENTREGA)
+  // Minhas entregas em andamento ("SAIU_PARA_ENTREGA")
   const minhasEntregasEmAndamento = pedidos.filter(p => {
-    if (!entregadorAtual) return false;
-    const mesmoEntregador = (p.entregadorId && String(p.entregadorId) === String(entregadorAtual.id)) ||
-                           (p.nomeEntregador && entregadorAtual.nome && p.nomeEntregador.toLowerCase() === entregadorAtual.nome.toLowerCase());
-    return mesmoEntregador && p.status === 'SAIU_PARA_ENTREGA';
+    if (p.status !== 'SAIU_PARA_ENTREGA') return false;
+    if (!entregadorAtual) return true;
+    return (p.entregadorId && String(p.entregadorId) === String(entregadorAtual.id)) ||
+           (p.nomeEntregador && entregadorAtual.nome && p.nomeEntregador.toLowerCase() === entregadorAtual.nome.toLowerCase());
   });
 
-  // 3. Histórico de entregas concluídas pelo próprio entregador (ENTREGUE)
+  // Histórico de entregas concluídas pelo entregador ("ENTREGUE")
   const minhasEntregasConcluidas = pedidos.filter(p => {
-    if (!entregadorAtual) return false;
-    const mesmoEntregador = (p.entregadorId && String(p.entregadorId) === String(entregadorAtual.id)) ||
-                           (p.nomeEntregador && entregadorAtual.nome && p.nomeEntregador.toLowerCase() === entregadorAtual.nome.toLowerCase());
-    return mesmoEntregador && p.status === 'ENTREGUE';
+    if (p.status !== 'ENTREGUE') return false;
+    if (!entregadorAtual) return true;
+    return (p.entregadorId && String(p.entregadorId) === String(entregadorAtual.id)) ||
+           (p.nomeEntregador && entregadorAtual.nome && p.nomeEntregador.toLowerCase() === entregadorAtual.nome.toLowerCase());
   });
 
   const isOnline = entregadorAtual?.disponivel !== false;
@@ -156,26 +156,21 @@ export function EntregadorOrdersView({ usuario }) {
           </div>
         </div>
 
-        {/* Botão Booleano de Status de Trabalho (Online / Offline) */}
+        {/* Status de Trabalho (Botão apenas para ENTREGADOR, Label para ADMIN) */}
         {entregadorAtual && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
               Status de Trabalho:
             </span>
-            <button
-              type="button"
-              onClick={aoAlternarStatusDisponivel}
-              disabled={alternandoStatus}
-              title={isOnline ? 'Clique para ficar Offline' : 'Clique para ficar Online'}
-              style={{
+            {usuario?.perfil === 'ADMIN' ? (
+              <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '8px 18px',
+                padding: '8px 16px',
                 borderRadius: '9999px',
                 fontSize: '0.88rem',
                 fontWeight: 700,
-                cursor: alternandoStatus ? 'wait' : 'pointer',
                 border: isOnline
                   ? '1px solid rgba(52, 211, 153, 0.4)'
                   : '1px solid rgba(248, 113, 113, 0.4)',
@@ -183,72 +178,86 @@ export function EntregadorOrdersView({ usuario }) {
                   ? 'rgba(16, 185, 129, 0.15)'
                   : 'rgba(239, 68, 68, 0.15)',
                 color: isOnline ? '#34d399' : '#f87171',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <span style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: isOnline ? '#34d399' : '#f87171',
-                boxShadow: isOnline ? '0 0 8px #34d399' : '0 0 8px #f87171'
-              }} />
-              {isOnline ? 'ONLINE (Disponível)' : 'OFFLINE (Indisponível)'}
-            </button>
+              }}>
+                <span style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: isOnline ? '#34d399' : '#f87171',
+                }} />
+                {isOnline ? 'ONLINE' : 'OFFLINE'}
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={aoAlternarStatusDisponivel}
+                disabled={alternandoStatus}
+                title={isOnline ? 'Clique para ficar Offline' : 'Clique para ficar Online'}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 18px',
+                  borderRadius: '9999px',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  cursor: alternandoStatus ? 'wait' : 'pointer',
+                  border: isOnline
+                    ? '1px solid rgba(52, 211, 153, 0.4)'
+                    : '1px solid rgba(248, 113, 113, 0.4)',
+                  backgroundColor: isOnline
+                    ? 'rgba(16, 185, 129, 0.15)'
+                    : 'rgba(239, 68, 68, 0.15)',
+                  color: isOnline ? '#34d399' : '#f87171',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: isOnline ? '#34d399' : '#f87171',
+                  boxShadow: isOnline ? '0 0 8px #34d399' : '0 0 8px #f87171'
+                }} />
+                {isOnline ? 'ONLINE (Disponível)' : 'OFFLINE (Indisponível)'}
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Alerta de Status Offline */}
-      {!isOnline && (
-        <div style={{
-          backgroundColor: 'rgba(245, 158, 11, 0.12)',
-          border: '1px solid rgba(245, 158, 11, 0.35)',
-          color: '#fbbf24',
-          padding: '14px 18px',
-          borderRadius: '14px',
-          fontSize: '0.9rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <AlertTriangle size={18} />
-          <span>Sua conta está <strong>OFFLINE</strong> no momento. Clique no botão de status acima para ficar <strong>ONLINE</strong> e pegar novos pedidos.</span>
+      {/* Sub-abas do Entregador */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setAbaInterna('DISPONIVEIS')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '12px',
+              fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s ease',
+              border: abaInterna === 'DISPONIVEIS' ? '2px solid #a855f7' : '1px solid var(--border-color)',
+              backgroundColor: abaInterna === 'DISPONIVEIS' ? 'rgba(168, 85, 247, 0.15)' : 'var(--bg-card)',
+              color: abaInterna === 'DISPONIVEIS' ? '#c084fc' : 'var(--text-secondary)'
+            }}
+          >
+            <Package size={16} /> Pedidos para Aceitar ({disponiveisParaEntrega.length})
+          </button>
+
+          <button
+            onClick={() => setAbaInterna('MINHAS_ENTREGAS')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '12px',
+              fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s ease',
+              border: abaInterna === 'MINHAS_ENTREGAS' ? '2px solid #10b981' : '1px solid var(--border-color)',
+              backgroundColor: abaInterna === 'MINHAS_ENTREGAS' ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-card)',
+              color: abaInterna === 'MINHAS_ENTREGAS' ? '#34d399' : 'var(--text-secondary)'
+            }}
+          >
+            <Truck size={16} /> Minhas Entregas & Histórico ({minhasEntregasEmAndamento.length + minhasEntregasConcluidas.length})
+          </button>
         </div>
-      )}
 
-      {/* Navegação Interna por Sub-abas */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <button
-          onClick={() => setAbaInterna('DISPONIVEIS')}
-          className="btn-secondary"
-          style={{
-            borderColor: abaInterna === 'DISPONIVEIS' ? '#a855f7' : 'var(--border-color)',
-            backgroundColor: abaInterna === 'DISPONIVEIS' ? 'rgba(168, 85, 247, 0.15)' : 'var(--bg-card)',
-            color: abaInterna === 'DISPONIVEIS' ? '#a855f7' : 'var(--text-secondary)',
-            fontWeight: 600,
-            padding: '10px 18px',
-          }}
-        >
-          <Package size={17} /> Pedidos para Aceitar ({disponiveisParaEntrega.length})
-        </button>
-
-        <button
-          onClick={() => setAbaInterna('MINHAS_ENTREGAS')}
-          className="btn-secondary"
-          style={{
-            borderColor: abaInterna === 'MINHAS_ENTREGAS' ? '#10b981' : 'var(--border-color)',
-            backgroundColor: abaInterna === 'MINHAS_ENTREGAS' ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-card)',
-            color: abaInterna === 'MINHAS_ENTREGAS' ? '#10b981' : 'var(--text-secondary)',
-            fontWeight: 600,
-            padding: '10px 18px',
-          }}
-        >
-          <Truck size={17} /> Histórico de Entregas ({minhasEntregasEmAndamento.length + minhasEntregasConcluidas.length})
-        </button>
-
-        <button onClick={carregarDados} className="btn-secondary" style={{ marginLeft: 'auto', padding: '10px 14px' }} title="Atualizar Dados">
+        <button onClick={carregarDados} className="btn-secondary" title="Atualizar dados">
           <RefreshCw size={16} className={carregando ? 'spin' : ''} />
         </button>
       </div>
@@ -274,16 +283,16 @@ export function EntregadorOrdersView({ usuario }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
               {disponiveisParaEntrega.map(p => (
                 <div key={p.id} className="glass-panel" style={{ borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '120px' }}>
+                      <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', wordBreak: 'break-word' }}>
                         Pedido #{p.codigo || p.id}
                       </span>
                       <div style={{ fontSize: '0.78rem', color: '#22d3ee', fontWeight: 600, marginTop: '2px' }}>
                         📦 Pronto para Coleta
                       </div>
                     </div>
-                    <span className={`status-badge status-${p.status}`}>
+                    <span className={`status-badge status-${p.status}`} style={{ flexShrink: 0, maxWidth: '100%' }}>
                       {labelStatus(p.status)}
                     </span>
                   </div>
@@ -345,16 +354,16 @@ export function EntregadorOrdersView({ usuario }) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
                     {minhasEntregasEmAndamento.map(p => (
                       <div key={p.id} className="glass-panel" style={{ borderRadius: '14px', padding: '20px', borderLeft: '4px solid #10b981', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1, minWidth: '120px' }}>
+                            <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', wordBreak: 'break-word' }}>
                               Pedido #{p.codigo || p.id}
                             </span>
                             <div style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 600, marginTop: '2px' }}>
                               🛵 Em rota de entrega
                             </div>
                           </div>
-                          <span className="status-badge status-SAIU_PARA_ENTREGA">
+                          <span className="status-badge status-SAIU_PARA_ENTREGA" style={{ flexShrink: 0, maxWidth: '100%' }}>
                             Em Trânsito
                           </span>
                         </div>
@@ -367,20 +376,46 @@ export function EntregadorOrdersView({ usuario }) {
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                           <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-accent)' }}>
                             R$ {Number(p.valorTotal || 0).toFixed(2)}
                           </span>
 
-                          <button
-                            onClick={() => aoConcluirEntrega(p.id)}
-                            disabled={processandoId === p.id}
-                            className="btn-primary"
-                            style={{ backgroundColor: '#10b981', padding: '8px 14px', fontSize: '0.85rem' }}
-                          >
-                            <CheckCircle2 size={16} />
-                            {processandoId === p.id ? 'Finalizando...' : 'Marcar Entregue'}
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() => setPedidoParaCancelar(p)}
+                              title="Cancelar entrega em andamento"
+                              style={{
+                                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#f87171',
+                                padding: '8px 12px',
+                                borderRadius: '10px',
+                                fontWeight: 600,
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.25)'}
+                              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)'}
+                            >
+                              <XCircle size={15} /> Cancelar
+                            </button>
+
+                            <button
+                              onClick={() => aoConcluirEntrega(p.id)}
+                              disabled={processandoId === p.id}
+                              className="btn-primary"
+                              style={{ backgroundColor: '#10b981', padding: '8px 14px', fontSize: '0.85rem' }}
+                            >
+                              <CheckCircle2 size={16} />
+                              {processandoId === p.id ? 'Finalizando...' : 'Marcar Entregue'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -417,14 +452,27 @@ export function EntregadorOrdersView({ usuario }) {
         </div>
       )}
 
-      {/* Paginação no canto inferior direito */}
+      {/* Paginação */}
       <PaginationControls
         paginaAtual={0}
         totalPaginas={1}
         totalElementos={pedidos.length}
-        tamanhoPagina={10}
+        tamanhoPagina={100}
         aoMudarPagina={() => {}}
+        aoMudarTamanho={() => {}}
       />
+
+      {/* Modal de Cancelamento de Pedido pelo Entregador */}
+      {pedidoParaCancelar && (
+        <CancelOrderModal
+          pedido={pedidoParaCancelar}
+          aoFechar={() => setPedidoParaCancelar(null)}
+          aoCancelarComSucesso={() => {
+            setPedidoParaCancelar(null);
+            carregarDados();
+          }}
+        />
+      )}
     </div>
   );
 }

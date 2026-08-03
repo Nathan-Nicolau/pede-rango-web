@@ -1,11 +1,11 @@
 import React from 'react';
-import { ShoppingBag, Clock, Truck, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, Clock, Truck, CheckCircle2, PackageCheck } from 'lucide-react';
 
 export function OrderStats({ pedidos = [] }) {
   const totalPedidos = pedidos.length;
   const recebidos = pedidos.filter(p => p.status === 'RECEBIDO').length;
   const emPreparo = pedidos.filter(p => p.status === 'EM_PREPARO').length;
-  const prontoParaEntrega = pedidos.filter(p => p.status === 'PRONTO_PARA_ENTREGA').length
+  const prontoParaEntrega = pedidos.filter(p => p.status === 'PRONTO_PARA_ENTREGA').length;
   const emEntrega = pedidos.filter(p => p.status === 'SAIU_PARA_ENTREGA').length;
   const entregues = pedidos.filter(p => p.status === 'ENTREGUE').length;
 
@@ -23,16 +23,16 @@ export function OrderStats({ pedidos = [] }) {
       corBorda: 'rgba(245, 158, 11, 0.3)'
     },
     {
+      titulo: 'Pronto para Entrega',
+      valor: prontoParaEntrega,
+      icone: <PackageCheck size={22} color="#22d3ee" />,
+      corBorda: 'rgba(34, 211, 238, 0.3)'
+    },
+    {
       titulo: 'Saiu para Entrega',
       valor: emEntrega,
       icone: <Truck size={22} color="#c084fc" />,
       corBorda: 'rgba(168, 85, 247, 0.3)'
-    },
-    {
-      titulo: 'Pronto para Entrega',
-      valor: prontoParaEntrega,
-      icone: <Truck size={22} color="0031F6E3" />,
-      corBorda: 'rgb(0 49 246 / 0.89)'
     },
     {
       titulo: 'Entregues',
@@ -45,7 +45,7 @@ export function OrderStats({ pedidos = [] }) {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
       gap: '16px',
       marginBottom: '28px'
     }}>
@@ -58,7 +58,7 @@ export function OrderStats({ pedidos = [] }) {
             borderRadius: '16px',
             borderLeft: `4px solid ${stat.corBorda.replace('0.3', '1')}`,
             display: 'flex',
-            justifyContent: 'space-between',
+            justify: 'space-between',
             alignItems: 'center'
           }}
         >
@@ -74,7 +74,10 @@ export function OrderStats({ pedidos = [] }) {
             backgroundColor: 'var(--bg-input)',
             padding: '12px',
             borderRadius: '12px',
-            border: `1px solid ${stat.corBorda}`
+            border: `1px solid ${stat.corBorda}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
             {stat.icone}
           </div>

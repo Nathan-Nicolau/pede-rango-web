@@ -70,7 +70,12 @@ export default function App() {
     definirCarregando(true);
     definirErro(null);
     try {
-      const dados = await servicoPedidos.obterTodosPedidosPaginado(pagina, tamanho, filtroStatus);
+      let dados;
+      if (usuario?.perfil === 'CLIENTE') {
+        dados = await servicoPedidos.obterMeusPedidosPaginado(pagina, tamanho, filtroStatus);
+      } else {
+        dados = await servicoPedidos.obterTodosPedidosPaginado(pagina, tamanho, filtroStatus);
+      }
       const lista = Array.isArray(dados.content) ? dados.content : [];
       definirPedidos(lista);
       definirTotalPaginas(dados.totalPages || 1);
@@ -188,7 +193,7 @@ export default function App() {
             {abaAtiva === 'PEDIDOS' && (
               <>
                 {/* Card Superior Exclusivo para Entregadores em Rota de Entrega */}
-                <ActiveDeliveryRidersCard pedidos={pedidos} />
+                <ActiveDeliveryRidersCard pedidos={pedidos} usuario={usuario} />
 
                 {/* Resumo de Estatísticas */}
                 <OrderStats pedidos={pedidos} />
@@ -490,6 +495,7 @@ export default function App() {
           pedido={pedidoParaCancelar}
           aoFechar={() => definirPedidoParaCancelar(null)}
           aoCancelarComSucesso={aoCancelarComSucesso}
+          usuario={usuario}
         />
       )}
 
