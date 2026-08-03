@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { servicoPedidos, servicoClientes, servicoProdutos } from '../services/api';
+import { PaginationControls } from './PaginationControls';
 import { X, Plus, Minus, Trash2, ShoppingBag, MapPin, User, AlertCircle, Search, ArrowRight, ArrowLeft, CheckCircle2, Tag, UtensilsCrossed } from 'lucide-react';
 
 const CATEGORIAS_CARDAPIO = [
@@ -31,9 +32,13 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
   const [carregandoClientes, setCarregandoClientes] = useState(!isClientePerfil);
   const [carregandoProdutos, setCarregandoProdutos] = useState(true);
 
-  // Filtros de Cardápio (Passo 1)
+  // Filtros & Paginação de Cardápio (Passo 1)
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('ALL');
   const [buscaProduto, setBuscaProduto] = useState('');
+  const [paginaProdutos, setPaginaProdutos] = useState(0);
+  const [tamanhoProdutos, setTamanhoProdutos] = useState(8);
+  const [totalPaginasProdutos, setTotalPaginasProdutos] = useState(1);
+  const [totalElementosProdutos, setTotalElementosProdutos] = useState(0);
 
   // Sacola de Compras: Mapa de idProduto -> { produto, quantidade }
   const [sacola, setSacola] = useState({});
@@ -41,15 +46,19 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // Carrega clientes e produtos ao abrir o modal
+  // Carrega clientes e dados ao abrir o modal
   useEffect(() => {
     if (!isClientePerfil) {
       carregarClientes();
     } else if (usuario?.email) {
       carregarDadosClienteLogado();
     }
-    carregarProdutos();
   }, [usuario]);
+
+  // Recarrega os produtos ao mudar de página, tamanho ou categoria
+  useEffect(() => {
+    carregarProdutos();
+  }, [paginaProdutos, tamanhoProdutos, categoriaSelecionada]);
 
   const carregarDadosClienteLogado = async () => {
     try {
@@ -88,11 +97,13 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
   const carregarProdutos = async () => {
     setCarregandoProdutos(true);
     try {
-      const resp = await servicoProdutos.obterTodosPaginado(0, 100);
+      const resp = await servicoProdutos.obterTodosPaginado(paginaProdutos, tamanhoProdutos, categoriaSelecionada);
       const lista = Array.isArray(resp.content)
         ? resp.content.filter(p => p.ativo !== false)
         : [];
       setProdutos(lista);
+      setTotalPaginasProdutos(resp.totalPages || 1);
+      setTotalElementosProdutos(resp.totalElements || 0);
     } catch {
       setProdutos([]);
     } finally {
@@ -381,7 +392,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => setCategoriaSelecionada(cat.id)}
+                    onClick={() => { setCategoriaSelecionada(cat.id); setPaginaProdutos(0); }}
                     style={{
                       padding: '8px 14px',
                       borderRadius: '999px',
@@ -413,94 +424,108 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Tente mudar o filtro de categoria ou a busca.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
-                {produtosFiltrados.map(prod => {
-                  const itemNaSacola = sacola[prod.id];
-                  const quantidadeAtual = itemNaSacola ? itemNaSacola.quantidade : 0;
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+                  {produtosFiltrados.map(prod => {
+                    const itemNaSacola = sacola[prod.id];
+                    const quantidadeAtual = itemNaSacola ? itemNaSacola.quantidade : 0;
 
-                  return (
-                    <div
-                      key={prod.id}
-                      className="glass-panel"
-                      style={{
-                        padding: '16px',
-                        borderRadius: '14px',
-                        border: quantidadeAtual > 0 ? '1px solid var(--primary-accent)' : '1px solid var(--border-color)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justify: 'space-between',
-                        gap: '12px',
-                        backgroundColor: quantidadeAtual > 0 ? 'rgba(211, 1, 1, 0.04)' : 'var(--bg-card)',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-                          <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
-                            {prod.nome}
-                          </h4>
-                          {prod.categoria && (
-                            <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--bg-input)', padding: '2px 8px', borderRadius: '6px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
-                              {prod.categoria}
-                            </span>
+                    return (
+                      <div
+                        key={prod.id}
+                        className="glass-panel"
+                        style={{
+                          padding: '16px',
+                          borderRadius: '14px',
+                          border: quantidadeAtual > 0 ? '1px solid var(--primary-accent)' : '1px solid var(--border-color)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justify: 'space-between',
+                          gap: '12px',
+                          backgroundColor: quantidadeAtual > 0 ? 'rgba(211, 1, 1, 0.04)' : 'var(--bg-card)',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
+                            <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                              {prod.nome}
+                            </h4>
+                            {prod.categoria && (
+                              <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--bg-input)', padding: '2px 8px', borderRadius: '6px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
+                                {prod.categoria}
+                              </span>
+                            )}
+                          </div>
+                          {prod.descricao && (
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {prod.descricao}
+                            </p>
                           )}
                         </div>
-                        {prod.descricao && (
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {prod.descricao}
-                          </p>
-                        )}
-                      </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-                        <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary-accent)' }}>
-                          R$ {Number(prod.preco || 0).toFixed(2)}
-                        </span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+                          <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary-accent)' }}>
+                            R$ {Number(prod.preco || 0).toFixed(2)}
+                          </span>
 
-                        {/* Controles de Quantidade */}
-                        {quantidadeAtual === 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => alterarQuantidadeProduto(prod, 1)}
-                            className="btn-primary"
-                            style={{ padding: '6px 14px', fontSize: '0.82rem' }}
-                          >
-                            <Plus size={15} /> Adicionar
-                          </button>
-                        ) : (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            backgroundColor: 'var(--bg-input)',
-                            padding: '4px 8px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--primary-accent)'
-                          }}>
+                          {/* Controles de Quantidade */}
+                          {quantidadeAtual === 0 ? (
                             <button
                               type="button"
-                              onClick={() => alterarQuantidadeProduto(prod, quantidadeAtual - 1)}
-                              style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                              onClick={() => alterarQuantidadeProduto(prod, 1)}
+                              className="btn-primary"
+                              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
                             >
-                              <Minus size={15} />
+                              <Plus size={15} /> Adicionar
                             </button>
-                            <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--primary-accent)', minWidth: '18px', textAlign: 'center' }}>
-                              {quantidadeAtual}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => alterarQuantidadeProduto(prod, quantidadeAtual + 1)}
-                              style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                            >
-                              <Plus size={15} />
-                            </button>
-                          </div>
-                        )}
+                          ) : (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              backgroundColor: 'var(--bg-input)',
+                              padding: '4px 8px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--primary-accent)'
+                            }}>
+                              <button
+                                type="button"
+                                onClick={() => alterarQuantidadeProduto(prod, quantidadeAtual - 1)}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                              >
+                                <Minus size={15} />
+                              </button>
+                              <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--primary-accent)', minWidth: '18px', textAlign: 'center' }}>
+                                {quantidadeAtual}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => alterarQuantidadeProduto(prod, quantidadeAtual + 1)}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                              >
+                                <Plus size={15} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+
+                <PaginationControls
+                  paginaAtual={paginaProdutos}
+                  totalPaginas={totalPaginasProdutos}
+                  totalElementos={totalElementosProdutos}
+                  tamanhoPagina={tamanhoProdutos}
+                  aoMudarPagina={(nova) => setPaginaProdutos(nova)}
+                  aoMudarTamanho={(novoTamanho) => {
+                    setTamanhoProdutos(novoTamanho);
+                    setPaginaProdutos(0);
+                  }}
+                />
+              </>
             )}
           </div>
         )}
