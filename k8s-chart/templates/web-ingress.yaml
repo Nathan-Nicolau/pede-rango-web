@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: food-delivery-web-ingress
+spec:
+  ingressClassName: nginx # A peça que faltava para ativar a rota
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: food-delivery-web-service
+            port:
+              number: 80
