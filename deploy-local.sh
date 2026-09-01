@@ -2,7 +2,7 @@
 set -e
 
 # ==============================================================================
-# Script de Deploy Local - Food Delivery Web (React + Vite + Nginx)
+# Script de Deploy Local - Pede Rango Web (React + Vite + Nginx)
 # ==============================================================================
 
 # Cores para saída no terminal
@@ -69,16 +69,6 @@ case "$1" in
 esac
 
 TAG="${1:-$DEFAULT_TAG}"
-TAR_FILE="${IMAGE_NAME}-${TAG}.tar"
-
-# Garante a limpeza do arquivo .tar mesmo em caso de erro ou interrupção
-cleanup() {
-  if [ -f "$TAR_FILE" ]; then
-    echo -e "${YELLOW}==> Limpando arquivo temporário ${TAR_FILE}...${NC}"
-    rm -f "$TAR_FILE"
-  fi
-}
-trap cleanup EXIT
 
 echo -e "${BLUE}================================================================${NC}"
 echo -e "${BLUE} Iniciando Build & Deploy: ${GREEN}${IMAGE_NAME}:${TAG}${NC}"
@@ -90,12 +80,9 @@ echo -e "${BLUE}================================================================
 echo -e "\n${BLUE}[1/4] Gerando imagem Docker (${IMAGE_NAME}:${TAG})...${NC}"
 docker build -t "${IMAGE_NAME}:${TAG}" .
 
-# 2. Exportando e Carregando no Kind
-echo -e "\n${BLUE}[2/4] Exportando imagem para carga no Kind...${NC}"
-docker save "${IMAGE_NAME}:${TAG}" -o "$TAR_FILE"
-
-echo -e "${BLUE}      Carregando ${TAR_FILE} no cluster Kind '${CLUSTER_NAME}'...${NC}"
-kind load image-archive "$TAR_FILE" --name "$CLUSTER_NAME"
+# 2. Carregando diretamente no cluster Kind via pipe stream
+echo -e "\n${BLUE}[2/4] Transmitindo imagem para o nó do Kind '${CLUSTER_NAME}-control-plane'...${NC}"
+docker save "${IMAGE_NAME}:${TAG}" | docker exec -i "${CLUSTER_NAME}-control-plane" ctr --namespace=k8s.io images import -
 
 # 3. Deploy / Upgrade via Helm
 echo -e "\n${BLUE}[3/4] Aplicando upgrade/install no Helm com a tag '${TAG}'...${NC}"
@@ -105,7 +92,8 @@ helm upgrade --install "$RELEASE_NAME" "$CHART_DIR" \
 
 # 4. Verificação de Saúde do Rollout
 echo -e "\n${BLUE}[4/4] Aguardando inicialização completa do Frontend...${NC}"
+kubectl rollout restart deployment/food-delivery-web
 kubectl rollout status deployment/food-delivery-web --timeout=60s
 
 echo -e "\n${GREEN}✔ Deploy do Frontend concluído com sucesso!${NC}"
-echo -e "Endpoint local: ${YELLOW}http://app.food-delivery.local${NC}"
+echo -e "Endpoint local: ${YELLOW}http://app.pede-rango.local${NC}"

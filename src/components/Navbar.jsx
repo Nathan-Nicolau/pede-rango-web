@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Utensils, LogOut, Plus, User, Sun, Moon, ShieldCheck, Truck, X, Mail, CheckCircle, Phone, MapPin, Save, AlertCircle, Edit2 } from 'lucide-react';
+import { Utensils, Flame, LogOut, Plus, User, Sun, Moon, ShieldCheck, Truck, X, Mail, CheckCircle, Phone, MapPin, Save, AlertCircle, Edit2 } from 'lucide-react';
 import { labelPerfil } from '../utils/statusLabels';
 import { servicoClientes, servicoEntregadores } from '../services/api';
 
@@ -120,21 +120,21 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
           {/* Marca (Alinhado à Esquerda) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
             <div style={{
-              background: 'linear-gradient(135deg, #D30101 0%, #9e0000 100%)',
+              background: 'linear-gradient(135deg, #D30101 0%, #850000 100%)',
               padding: '10px',
               borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(211, 1, 1, 0.3)'
+              boxShadow: '0 4px 14px rgba(211, 1, 1, 0.4)'
             }}>
-              <Utensils color="#ffffff" size={22} />
+              <Flame color="#ffffff" size={22} />
             </div>
             <div>
-              <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
-                FoodDelivery <span style={{ color: 'var(--primary-accent)', fontSize: '0.85rem', fontWeight: 600 }}>WEB</span>
+              <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
+                Pede <span style={{ color: 'var(--primary-accent)' }}>Rango</span>
               </h1>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>Gestão e Operações de Delivery</p>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>Sabor & Entrega Rápida</p>
             </div>
           </div>
 

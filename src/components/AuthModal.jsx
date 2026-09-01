@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { servicoAutenticacao } from '../services/api';
-import { Utensils, LogIn, UserPlus, AlertCircle, ChevronLeft, ChevronRight, Eye, EyeOff, CheckCircle2, XCircle, RefreshCw, MapPin, Phone, CreditCard, User, Mail, Lock } from 'lucide-react';
+import { Flame, Utensils, LogIn, UserPlus, AlertCircle, ChevronLeft, ChevronRight, Eye, EyeOff, CheckCircle2, XCircle, RefreshCw, MapPin, Phone, CreditCard, User, Mail, Lock } from 'lucide-react';
 
 // Slides do Carrossel com SVGs Customizados no tema Vermelho & Dark
 const SLIDES_CARROSSEL = [
@@ -360,14 +360,14 @@ export function AuthModal({ aoAutenticarComSucesso }) {
             <div
               style={{
                 display: 'inline-flex',
-                background: 'linear-gradient(135deg, #D30101 0%, #9e0000 100%)',
+                background: 'linear-gradient(135deg, #D30101 0%, #850000 100%)',
                 padding: '10px',
                 borderRadius: '14px',
                 marginBottom: '8px',
-                boxShadow: '0 6px 20px rgba(211, 1, 1, 0.35)'
+                boxShadow: '0 6px 20px rgba(211, 1, 1, 0.4)'
               }}
             >
-              <Utensils color="#ffffff" size={24} />
+              <Flame color="#ffffff" size={24} />
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--title-color)', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>
               {ehModoLogin ? 'Acessar Conta' : 'Cadastro de Cliente'}

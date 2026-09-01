@@ -1,4 +1,4 @@
-const URL_BASE_API = import.meta.env.VITE_API_URL || 'http://api.food-delivery.local';
+const URL_BASE_API = import.meta.env.VITE_API_URL || 'http://api.pede-rango.local';
 
 export async function requisitarApi(endpoint, opcoes = {}) {
   const token = localStorage.getItem('token');
