@@ -330,7 +330,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
   return (
     <div className="modal-overlay" style={{ padding: '20px' }}>
       <div
-        className="modal-content"
+        className="modal-content auth-modal-card"
         style={{
           maxWidth: '1120px',
           width: '100%',
@@ -346,6 +346,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
       >
         {/* LADO ESQUERDO: Form de Login / Cadastro */}
         <div
+          className="auth-form-side"
           style={{
             padding: '36px 40px',
             display: 'flex',
@@ -706,7 +707,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                   textAlign: 'center'
                 }}
               >
-                💡 <strong style={{ color: 'var(--text-main)' }}>Dica de Teste:</strong> <code>admin@fooddelivery.com</code> / <code>123456</code>
+                💡 <strong style={{ color: 'var(--text-main)' }}>Dica de Teste:</strong> <code>admin@pederango.com</code> / <code>123456</code>
               </div>
             </div>
           )}
@@ -714,6 +715,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
 
         {/* LADO DIREITO: Carrossel SVG */}
         <div
+          className="auth-carousel-side"
           style={{
             position: 'relative',
             background: 'var(--carousel-bg)',

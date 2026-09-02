@@ -1,0 +1,18 @@
+{
+  "short_name": "Pede Rango",
+  "name": "Pede Rango — Sabor & Delivery",
+  "description": "Aplicativo de Delivery e Gestão de Pedidos Pede Rango",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121214",
+  "theme_color": "#D30101",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64 128x128 192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

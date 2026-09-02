@@ -3,8 +3,26 @@ import { Utensils, Flame, LogOut, Plus, User, Sun, Moon, ShieldCheck, Truck, X, 
 import { labelPerfil } from '../utils/statusLabels';
 import { servicoClientes, servicoEntregadores } from '../services/api';
 
-export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTema }) {
-  const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
+export function Navbar({ 
+  usuario, 
+  aoSair, 
+  aoAbrirNovoPedido, 
+  tema, 
+  aoAlternarTema,
+  modalPerfilAberto: modalPerfilExterno,
+  aoFecharPerfil: aoFecharPerfilExterno,
+  aoAbrirPerfil: aoAbrirPerfilExterno
+}) {
+  const [modalPerfilInterno, setModalPerfilInterno] = useState(false);
+  const modalPerfilAberto = modalPerfilExterno !== undefined ? modalPerfilExterno : modalPerfilInterno;
+  const setModalPerfilAberto = (valor) => {
+    if (modalPerfilExterno !== undefined) {
+      if (valor && aoAbrirPerfilExterno) aoAbrirPerfilExterno();
+      else if (!valor && aoFecharPerfilExterno) aoFecharPerfilExterno();
+    } else {
+      setModalPerfilInterno(valor);
+    }
+  };
   const nomeExibicao = usuario?.nome || usuario?.name || usuario?.email || 'Usuário';
   const perfil = usuario?.perfil || 'CLIENTE';
 

@@ -18,6 +18,7 @@ import { Search, Filter, RefreshCw, AlertTriangle, Plus, Sun, Moon, Package, Tru
 import { LISTA_STATUS_PEDIDO } from './utils/statusLabels';
 import { UsuariosView } from './components/UsuariosView';
 import { ClientesView } from './components/ClientesView';
+import { BottomNav } from './components/BottomNav';
 
 export default function App() {
   const [usuario, definirUsuario] = useState(servicoAutenticacao.obterUsuarioAtual());
@@ -45,6 +46,7 @@ export default function App() {
   const [modalLogoutAberto, definirModalLogoutAberto] = useState(false);
   const [pedidoSelecionado, definirPedidoSelecionado] = useState(null);
   const [pedidoParaCancelar, definirPedidoParaCancelar] = useState(null);
+  const [modalPerfilAberto, definirModalPerfilAberto] = useState(false);
 
   // Estado do Tema (Light / Dark)
   const [tema, definirTema] = useState(() => {
@@ -157,14 +159,17 @@ export default function App() {
         aoAbrirNovoPedido={() => definirModalCriacaoAberto(true)}
         tema={tema}
         aoAlternarTema={aoAlternarTema}
+        modalPerfilAberto={modalPerfilAberto}
+        aoAbrirPerfil={() => definirModalPerfilAberto(true)}
+        aoFecharPerfil={() => definirModalPerfilAberto(false)}
       />
 
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+      <main className="app-main-content" style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
         {!estaAutenticado ? (
           <AuthModal aoAutenticarComSucesso={aoAutenticarComSucesso} />
         ) : (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--bg-card)', padding: '6px', borderRadius: '16px', border: '1px solid var(--border-color)', marginBottom: '28px', overflowX: 'auto' }}>
+            <div className="desktop-nav-tabs" style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--bg-card)', padding: '6px', borderRadius: '16px', border: '1px solid var(--border-color)', marginBottom: '28px', overflowX: 'auto' }}>
               {(usuario?.perfil === 'ADMIN' || !usuario?.perfil) && (
                 <>
                   <button onClick={() => definirAbaAtiva('PEDIDOS')} className={`nav-tab-btn ${abaAtiva === 'PEDIDOS' ? 'active' : ''}`}><Package size={18} /> Pedidos</button>
@@ -503,6 +508,20 @@ export default function App() {
         <LogoutModal
           aoFechar={() => definirModalLogoutAberto(false)}
           aoConfirmarSair={aoConfirmarSair}
+        />
+      )}
+
+      {/* Barra de Navegação Inferior para Telas Mobile (PWA) */}
+      {estaAutenticado && (
+        <BottomNav
+          usuario={usuario}
+          abaAtiva={abaAtiva}
+          definirAbaAtiva={definirAbaAtiva}
+          aoAbrirNovoPedido={() => definirModalCriacaoAberto(true)}
+          aoAbrirPerfil={() => definirModalPerfilAberto(true)}
+          aoSair={() => definirModalLogoutAberto(true)}
+          tema={tema}
+          aoAlternarTema={aoAlternarTema}
         />
       )}
     </div>
