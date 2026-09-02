@@ -1,6 +1,6 @@
 apiVersion: v2
-name: k8s-chart
-description: A Helm chart for Kubernetes
+name: pede-rango-web
+description: Helm chart para Pede Rango Web (React PWA + Nginx)
 
 # A chart can be either an 'application' or a 'library' chart.
 #

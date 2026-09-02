@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: food-delivery-web-ingress
 spec:
-  ingressClassName: nginx # A peça que faltava para ativar a rota
+  ingressClassName: nginx
   rules:
   - host: {{ .Values.ingress.host }}
     http:
@@ -14,4 +14,18 @@ spec:
           service:
             name: food-delivery-web-service
             port:
-              number: 80
+              number: {{ .Values.web.port }}
+  {{- if .Values.ingress.additionalHosts }}
+  {{- range .Values.ingress.additionalHosts }}
+  - host: {{ . }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: food-delivery-web-service
+            port:
+              number: {{ $.Values.web.port }}
+  {{- end }}
+  {{- end }}

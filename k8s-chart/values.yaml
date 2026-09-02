@@ -1,5 +1,7 @@
 ingress:
   host: "app.pede-rango.local"
+  additionalHosts:
+    - "app.food-delivery.local"
 
 web:
   image: "food-delivery-web"
