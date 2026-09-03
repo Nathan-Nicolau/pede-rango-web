@@ -380,6 +380,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
 
           {/* Tab Toggle (Entrar / Cadastrar) */}
           <div
+            className="auth-tabs-toggle"
             style={{
               position: 'relative',
               display: 'flex',
@@ -408,6 +409,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
 
             <button
               type="button"
+              className="auth-tab-btn"
               onClick={() => { definirEhModoLogin(true); definirErro(null); }}
               style={{
                 flex: 1,
@@ -432,6 +434,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
             </button>
             <button
               type="button"
+              className="auth-tab-btn"
               onClick={() => { definirEhModoLogin(false); definirErro(null); }}
               style={{
                 flex: 1,
@@ -540,7 +543,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   {/* Campo CPF (Aceita Apenas Números) */}
                   <div className="form-group">
                     <label htmlFor="auth-cpf">CPF (Apenas números) *</label>
@@ -590,7 +593,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">
                     <label htmlFor="auth-email-reg">E-mail *</label>
                     <div style={{ position: 'relative' }}>

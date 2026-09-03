@@ -206,18 +206,20 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
 
   return (
     <div className="modal-overlay" style={{ padding: '16px' }}>
-      <div className="modal-content modal-content-xl" style={{ maxWidth: '920px', padding: 0, overflow: 'hidden', borderRadius: '20px' }}>
+      <div className="modal-content modal-content-xl create-order-modal-dialog" style={{ maxWidth: '920px', padding: 0, overflow: 'hidden', borderRadius: '20px', display: 'flex', flexDirection: 'column' }}>
         
         {/* Cabeçalho do Wizard com Alinhamento em Extremidades Opostas */}
-        <div style={{
-          padding: '20px 24px',
+        <div className="create-order-modal-header" style={{
+          padding: '18px 24px',
           backgroundColor: 'var(--bg-card)',
           borderBottom: '1px solid var(--border-color)',
           display: 'flex',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           alignItems: 'center',
           width: '100%',
-          gap: '16px'
+          boxSizing: 'border-box',
+          gap: '16px',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
             <div style={{
@@ -266,11 +268,12 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
         </div>
 
         {/* Stepper Visual de Passos */}
-        <div style={{
+        <div className="create-order-wizard-tabs" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           backgroundColor: 'var(--bg-input)',
-          borderBottom: '1px solid var(--border-color)'
+          borderBottom: '1px solid var(--border-color)',
+          flexShrink: 0
         }}>
           <div
             onClick={() => setPassoAtual(1)}
@@ -371,30 +374,31 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
             PASSO 1: CARDÁPIO INTERATIVO & SELEÇÃO DE ITENS
             ========================================================================= */}
         {passoAtual === 1 && (
-          <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px', maxHeight: '65vh', overflowY: 'auto' }}>
+          <div className="create-order-step-content" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
             
             {/* Barra de Filtro por Categoria e Busca */}
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ position: 'relative', flex: '1 1 240px' }}>
-                <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <div className="create-order-filter-bar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="search-input-wrapper" style={{ position: 'relative', flex: '1 1 240px', width: '100%' }}>
+                <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
                 <input
                   type="text"
-                  className="form-input"
+                  className="search-input-with-icon form-input"
                   placeholder="Buscar produto no cardápio..."
                   value={buscaProduto}
                   onChange={(e) => setBuscaProduto(e.target.value)}
-                  style={{ paddingLeft: '38px', width: '100%' }}
+                  style={{ paddingLeft: '42px', width: '100%' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%' }}>
+              <div className="create-order-categories" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%', flexShrink: 0 }}>
                 {CATEGORIAS_CARDAPIO.map(cat => (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => { setCategoriaSelecionada(cat.id); setPaginaProdutos(0); }}
+                    className="category-pill-btn"
                     style={{
-                      padding: '8px 14px',
+                      padding: '7px 14px',
                       borderRadius: '999px',
                       fontSize: '0.8rem',
                       fontWeight: 600,
@@ -403,7 +407,8 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                       border: categoriaSelecionada === cat.id ? '1px solid var(--primary-accent)' : '1px solid var(--border-color)',
                       backgroundColor: categoriaSelecionada === cat.id ? 'rgba(211, 1, 1, 0.18)' : 'var(--bg-card)',
                       color: categoriaSelecionada === cat.id ? 'var(--primary-accent)' : 'var(--text-secondary)',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.2s ease',
+                      flexShrink: 0
                     }}
                   >
                     {cat.label}
@@ -425,7 +430,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '14px' }}>
                   {produtosFiltrados.map(prod => {
                     const itemNaSacola = sacola[prod.id];
                     const quantidadeAtual = itemNaSacola ? itemNaSacola.quantidade : 0;
@@ -433,39 +438,39 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                     return (
                       <div
                         key={prod.id}
-                        className="glass-panel"
+                        className="glass-panel create-order-product-card"
                         style={{
-                          padding: '16px',
+                          padding: '14px 16px',
                           borderRadius: '14px',
                           border: quantidadeAtual > 0 ? '1px solid var(--primary-accent)' : '1px solid var(--border-color)',
                           display: 'flex',
                           flexDirection: 'column',
-                          justify: 'space-between',
-                          gap: '12px',
+                          justifyContent: 'space-between',
+                          gap: '10px',
                           backgroundColor: quantidadeAtual > 0 ? 'rgba(211, 1, 1, 0.04)' : 'var(--bg-card)',
                           transition: 'all 0.2s ease'
                         }}
                       >
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-                            <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                            <h4 className="create-order-product-title" style={{ fontSize: '0.94rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                               {prod.nome}
                             </h4>
                             {prod.categoria && (
-                              <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--bg-input)', padding: '2px 8px', borderRadius: '6px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
+                              <span style={{ fontSize: '0.68rem', backgroundColor: 'var(--bg-input)', padding: '2px 7px', borderRadius: '6px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
                                 {prod.categoria}
                               </span>
                             )}
                           </div>
                           {prod.descricao && (
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            <p className="create-order-product-desc" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.35' }}>
                               {prod.descricao}
                             </p>
                           )}
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-                          <span style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--primary-accent)' }}>
+                          <span className="create-order-product-price" style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-accent)' }}>
                             R$ {Number(prod.preco || 0).toFixed(2)}
                           </span>
 
@@ -474,10 +479,10 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                             <button
                               type="button"
                               onClick={() => alterarQuantidadeProduto(prod, 1)}
-                              className="btn-primary"
-                              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                              className="btn-primary create-order-product-btn"
+                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                             >
-                              <Plus size={15} /> Adicionar
+                              <Plus size={14} /> Adicionar
                             </button>
                           ) : (
                             <div style={{
@@ -534,16 +539,16 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
             PASSO 2: ENDEREÇO & CONFIRMAÇÃO DO PEDIDO (Dados do Cliente Fixos)
             ========================================================================= */}
         {passoAtual === 2 && (
-          <form onSubmit={aoSubmeterFinal} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '65vh', overflowY: 'auto' }}>
+          <form onSubmit={aoSubmeterFinal} className="create-order-step-content" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '18px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
             
             {/* Seção de Dados do Cliente e Endereço */}
-            <div style={{ backgroundColor: 'var(--bg-input)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ backgroundColor: 'var(--bg-input)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <MapPin size={18} color="var(--primary-accent)" /> Endereço de Entrega & Cliente
               </h4>
 
               {isClientePerfil ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div className="form-group">
                     <label>Nome do Cliente (Seu perfil) *</label>
                     <input
@@ -569,7 +574,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                     <button
                       type="button"
                       onClick={() => { setModoCliente('CADASTRADO'); aoDeselecionarCliente(); }}
@@ -611,12 +616,12 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                         </div>
                       ) : (
                         <div style={{ position: 'relative' }}>
-                          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                           <input
-                            type="text" className="form-input"
+                            type="text" className="search-input-with-icon form-input"
                             placeholder="Buscar cliente por nome ou e-mail..."
                             value={buscaCliente} onChange={e => setBuscaCliente(e.target.value)}
-                            style={{ paddingLeft: '38px', width: '100%' }}
+                            style={{ paddingLeft: '40px', width: '100%' }}
                           />
                           {buscaCliente && (
                             <div style={{
@@ -642,7 +647,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                       <div className="form-group">
                         <label>Nome do Cliente *</label>
                         <input type="text" className="form-input" placeholder="Ex: João da Silva"
@@ -660,11 +665,13 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
             </div>
 
             {/* Resumo da Tabela de Itens */}
-            <div>
+            <div className="order-summary-items-section">
               <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '10px' }}>
                 Resumo dos Itens Escolhidos ({listaItensSacola.length})
               </h4>
-              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+              
+              {/* Tabela no Desktop */}
+              <div className="desktop-items-table" style={{ backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ backgroundColor: 'var(--bg-input)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
@@ -688,29 +695,62 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                   </tbody>
                 </table>
               </div>
+
+              {/* Lista em Cards no Mobile (Zero Overflow) */}
+              <div className="mobile-items-list" style={{ display: 'none', flexDirection: 'column', gap: '8px' }}>
+                {listaItensSacola.map(item => (
+                  <div
+                    key={item.produtoId}
+                    style={{
+                      backgroundColor: 'var(--bg-card)',
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-color)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem', wordBreak: 'break-word' }}>
+                        {item.nome}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        {item.quantidade}x R$ {Number(item.precoUnitario).toFixed(2)}
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 800, color: 'var(--primary-accent)', fontSize: '1rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      R$ {(item.quantidade * item.precoUnitario).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
           </form>
         )}
 
         {/* Rodapé Fixo do Modal */}
-        <div style={{
-          padding: '16px 24px',
+        <div className="create-order-modal-footer" style={{
+          padding: '14px 20px',
           backgroundColor: 'var(--bg-card)',
           borderTop: '1px solid var(--border-color)',
           display: 'flex',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '16px'
+          gap: '14px',
+          flexShrink: 0,
+          boxSizing: 'border-box'
         }}>
-          <div>
+          <div className="create-order-footer-price">
             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Valor Total do Pedido:</span>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary-accent)', margin: 0 }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-accent)', margin: 0 }}>
               R$ {valorTotalSacola}
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="create-order-footer-actions" style={{ display: 'flex', gap: '10px' }}>
             {passoAtual === 1 ? (
               <>
                 <button type="button" className="btn-secondary" onClick={aoFechar}>

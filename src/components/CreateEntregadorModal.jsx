@@ -106,7 +106,7 @@ export function CreateEntregadorModal({ aoFechar, aoCriarComSucesso }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label htmlFor="ent-email">E-mail de Acesso *</label>
               <input
@@ -134,7 +134,7 @@ export function CreateEntregadorModal({ aoFechar, aoCriarComSucesso }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label htmlFor="ent-veiculo">Tipo de Veículo *</label>
               <select
@@ -199,7 +199,7 @@ export function CreateEntregadorModal({ aoFechar, aoCriarComSucesso }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <div className="modal-footer-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button type="button" className="btn-secondary" onClick={aoFechar}>
               Cancelar
             </button>

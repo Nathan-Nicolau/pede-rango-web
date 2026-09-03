@@ -133,7 +133,7 @@ export function EntregadorOrdersView({ usuario }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Header do Painel do Entregador */}
-      <div style={{
+      <div className="view-header-row" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px',
         padding: '20px 24px', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid rgba(168, 85, 247, 0.3)',
         background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, var(--bg-card) 100%)',
@@ -228,10 +228,11 @@ export function EntregadorOrdersView({ usuario }) {
       </div>
 
       {/* Sub-abas do Entregador */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div className="entregador-subtabs-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <div className="entregador-subtabs-group" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setAbaInterna('DISPONIVEIS')}
+            className="entregador-subtab-btn"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '12px',
               fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s ease',
@@ -245,6 +246,7 @@ export function EntregadorOrdersView({ usuario }) {
 
           <button
             onClick={() => setAbaInterna('MINHAS_ENTREGAS')}
+            className="entregador-subtab-btn"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '12px',
               fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s ease',

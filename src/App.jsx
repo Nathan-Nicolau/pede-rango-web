@@ -19,6 +19,7 @@ import { LISTA_STATUS_PEDIDO } from './utils/statusLabels';
 import { UsuariosView } from './components/UsuariosView';
 import { ClientesView } from './components/ClientesView';
 import { BottomNav } from './components/BottomNav';
+import { InstallPwaPrompt } from './components/InstallPwaPrompt';
 
 export default function App() {
   const [usuario, definirUsuario] = useState(servicoAutenticacao.obterUsuarioAtual());
@@ -204,7 +205,7 @@ export default function App() {
                 <OrderStats pedidos={pedidos} />
 
                 {/* Barra de Filtro e Busca */}
-                <div style={{
+                <div className="filter-search-container" style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -217,7 +218,7 @@ export default function App() {
                   border: '1px solid var(--border-color)'
                 }}>
                   {/* Input de Busca */}
-                  <div style={{ position: 'relative', flex: '1 1 300px' }}>
+                  <div className="filter-search-input-wrapper" style={{ position: 'relative', flex: '1 1 300px' }}>
                     <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
                     <input
                       type="text"
@@ -230,8 +231,8 @@ export default function App() {
                   </div>
 
                   {/* Dropdown de Filtro de Status & Atualizar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="filter-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div className="filter-select-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Filter size={16} color="var(--text-secondary)" />
                       <select
                         value={filtroStatus}
@@ -248,7 +249,7 @@ export default function App() {
 
                     <button
                       onClick={carregarPedidos}
-                      className="btn-secondary"
+                      className="btn-secondary filter-refresh-btn"
                       style={{ padding: '10px 14px' }}
                       title="Atualizar lista"
                     >
@@ -258,7 +259,7 @@ export default function App() {
                     {usuario?.perfil === 'CLIENTE' && (
                       <button
                         onClick={() => definirModalCriacaoAberto(true)}
-                        className="btn-primary"
+                        className="btn-primary filter-novo-pedido-btn"
                         style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}
                       >
                         <Plus size={18} /> Fazer Novo Pedido
@@ -524,6 +525,9 @@ export default function App() {
           aoAlternarTema={aoAlternarTema}
         />
       )}
+
+      {/* Banner de Instalação do PWA */}
+      <InstallPwaPrompt />
     </div>
   );
 }

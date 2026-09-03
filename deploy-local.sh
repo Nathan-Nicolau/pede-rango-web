@@ -14,9 +14,9 @@ NC='\033[0m' # No Color
 
 # Configurações do ambiente
 CLUSTER_NAME="meu-cluster-local"
-RELEASE_NAME="meu-front-delivery"
+RELEASE_NAME="pede-rango-web"
 CHART_DIR="./k8s-chart"
-IMAGE_NAME="food-delivery-web"
+IMAGE_NAME="pede-rango-web"
 DEFAULT_TAG="v3"
 
 # Diretório base do script
@@ -47,18 +47,18 @@ case "$1" in
     ;;
   status)
     echo -e "${BLUE}==> Verificando status do Frontend no cluster Kind...${NC}"
-    kubectl get pods,svc,ingress -l app=food-delivery-web
+    kubectl get pods,svc,ingress -l app=pede-rango-web
     exit 0
     ;;
   logs)
     echo -e "${BLUE}==> Acompanhando logs do Frontend (Ctrl+C para sair)...${NC}"
-    kubectl logs -f -l app=food-delivery-web --tail=50
+    kubectl logs -f -l app=pede-rango-web --tail=50
     exit 0
     ;;
   restart)
     echo -e "${BLUE}==> Reiniciando o deployment do Frontend...${NC}"
-    kubectl rollout restart deployment/food-delivery-web
-    kubectl rollout status deployment/food-delivery-web --timeout=60s
+    kubectl rollout restart deployment/pede-rango-web
+    kubectl rollout status deployment/pede-rango-web --timeout=60s
     exit 0
     ;;
   uninstall)
@@ -92,8 +92,8 @@ helm upgrade --install "$RELEASE_NAME" "$CHART_DIR" \
 
 # 4. Verificação de Saúde do Rollout
 echo -e "\n${BLUE}[4/4] Aguardando inicialização completa do Frontend...${NC}"
-kubectl rollout restart deployment/food-delivery-web
-kubectl rollout status deployment/food-delivery-web --timeout=60s
+kubectl rollout restart deployment/pede-rango-web
+kubectl rollout status deployment/pede-rango-web --timeout=60s
 
 echo -e "\n${GREEN}✔ Deploy do Frontend concluído com sucesso!${NC}"
 echo -e "Endpoint local: ${YELLOW}http://app.pede-rango.local${NC}"

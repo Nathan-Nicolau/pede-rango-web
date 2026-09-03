@@ -1,10 +1,10 @@
 ingress:
   host: "app.pede-rango.local"
   additionalHosts:
-    - "app.food-delivery.local"
+    - "app.192.168.3.27.nip.io"
 
 web:
-  image: "food-delivery-web"
+  image: "pede-rango-web"
   tag: "v3" # Versao atualizada com URL correta da API
   replicas: 1
   port: 80

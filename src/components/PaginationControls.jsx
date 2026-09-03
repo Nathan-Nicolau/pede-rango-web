@@ -15,6 +15,7 @@ export function PaginationControls({
 
   return (
     <div
+      className="pagination-controls-wrapper"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -23,10 +24,12 @@ export function PaginationControls({
         marginTop: '28px',
         padding: '12px 0',
         width: '100%',
+        boxSizing: 'border-box'
       }}
     >
       {/* Controles de Navegação de Páginas (Canto Inferior Direito) */}
       <div
+        className="pagination-controls-card"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -35,11 +38,13 @@ export function PaginationControls({
           border: '1px solid var(--border-color)',
           padding: '8px 16px',
           borderRadius: '14px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+          boxSizing: 'border-box',
+          maxWidth: '100%'
         }}
       >
         {aoMudarTamanho && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px', borderRight: '1px solid var(--border-color)', paddingRight: '12px' }}>
+          <div className="pagination-per-page" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px', borderRight: '1px solid var(--border-color)', paddingRight: '12px' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Por página:</span>
             <select
               value={tamanhoPagina}
@@ -64,13 +69,16 @@ export function PaginationControls({
 
         <button
           type="button"
+          className="pagination-btn pagination-prev-btn"
           onClick={() => temAnterior && aoMudarPagina(paginaAtual - 1)}
           disabled={!temAnterior}
+          title="Página Anterior"
+          aria-label="Página Anterior"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '7px 14px',
+            justifyContent: 'center',
+            padding: '8px 12px',
             fontSize: '0.85rem',
             fontWeight: 600,
             borderRadius: '9px',
@@ -84,32 +92,39 @@ export function PaginationControls({
           onMouseEnter={e => { if (temAnterior) e.currentTarget.style.borderColor = 'var(--primary-accent)'; }}
           onMouseLeave={e => { if (temAnterior) e.currentTarget.style.borderColor = 'var(--border-color)'; }}
         >
-          <ChevronLeft size={16} /> Anterior
+          <ChevronLeft size={18} />
         </button>
 
-        <span style={{
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          color: 'var(--text-main)',
-          padding: '4px 10px',
-          backgroundColor: 'var(--bg-input)',
-          borderRadius: '8px',
-          border: '1px solid var(--border-color)',
-          minWidth: '95px',
-          textAlign: 'center'
-        }}>
+        <span
+          className="pagination-page-indicator"
+          style={{
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            color: 'var(--text-main)',
+            padding: '5px 12px',
+            backgroundColor: 'var(--bg-input)',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            minWidth: '90px',
+            textAlign: 'center',
+            whiteSpace: 'nowrap'
+          }}
+        >
           Página {paginaAtual + 1} de {paginasValidas}
         </span>
 
         <button
           type="button"
+          className="pagination-btn pagination-next-btn"
           onClick={() => temProximo && aoMudarPagina(paginaAtual + 1)}
           disabled={!temProximo}
+          title="Próxima Página"
+          aria-label="Próxima Página"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '7px 14px',
+            justifyContent: 'center',
+            padding: '8px 12px',
             fontSize: '0.85rem',
             fontWeight: 600,
             borderRadius: '9px',
@@ -123,7 +138,7 @@ export function PaginationControls({
           onMouseEnter={e => { if (temProximo) e.currentTarget.style.borderColor = 'var(--primary-accent)'; }}
           onMouseLeave={e => { if (temProximo) e.currentTarget.style.borderColor = 'var(--border-color)'; }}
         >
-          Próxima <ChevronRight size={16} />
+          <ChevronRight size={18} />
         </button>
       </div>
     </div>

@@ -183,7 +183,9 @@ export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus 
           <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)' }}>
             <Package size={18} /> Itens do Pedido ({listaItens.length})
           </h3>
-          <div style={{
+          
+          {/* Tabela Desktop */}
+          <div className="desktop-items-table" style={{
             backgroundColor: 'var(--bg-input)',
             borderRadius: '12px',
             border: '1px solid var(--border-color)',
@@ -218,6 +220,44 @@ export function OrderDetailModal({ pedido, usuario, aoFechar, aoAtualizarStatus 
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Lista em Cards no Mobile */}
+          <div className="mobile-items-list" style={{ display: 'none', flexDirection: 'column', gap: '8px' }}>
+            {listaItens.map((item, i) => {
+              const nome = item.nome || item.name;
+              const qtd = item.quantidade ?? item.quantity ?? 1;
+              const precoUnitario = item.precoUnitario ?? item.unitPrice ?? 0;
+              const subtotal = item.subtotal ?? (qtd * precoUnitario);
+
+              return (
+                <div
+                  key={item.id || i}
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem', wordBreak: 'break-word' }}>
+                      {nome}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {qtd}x R$ {Number(precoUnitario).toFixed(2)}
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 800, color: 'var(--primary-accent)', fontSize: '1rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    R$ {Number(subtotal).toFixed(2)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

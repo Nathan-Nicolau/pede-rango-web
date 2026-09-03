@@ -125,7 +125,7 @@ export function Navbar({
         zIndex: 100,
         transition: 'background-color 0.3s ease, border-color 0.3s ease'
       }}>
-        <div style={{
+        <div className="navbar-container" style={{
           maxWidth: '1200px',
           margin: '0 auto',
           padding: '14px 24px',
@@ -136,8 +136,8 @@ export function Navbar({
           boxSizing: 'border-box'
         }}>
           {/* Marca (Alinhado à Esquerda) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-            <div style={{
+          <div className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            <div className="navbar-brand-logo" style={{
               background: 'linear-gradient(135deg, #D30101 0%, #850000 100%)',
               padding: '10px',
               borderRadius: '12px',
@@ -149,17 +149,17 @@ export function Navbar({
               <Flame color="#ffffff" size={22} />
             </div>
             <div>
-              <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
+              <h1 className="navbar-brand-title" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
                 Pede <span style={{ color: 'var(--primary-accent)' }}>Rango</span>
               </h1>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>Sabor & Entrega Rápida</p>
+              <p className="navbar-brand-subtitle" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>Sabor & Entrega Rápida</p>
             </div>
           </div>
 
           {/* Controles de Ação (Alinhado à Direita) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginLeft: 'auto' }}>
+          <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '14px', marginLeft: 'auto' }}>
             {usuario && (perfil === 'ADMIN' || perfil === 'CLIENTE') && (
-              <button onClick={aoAbrirNovoPedido} className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+              <button onClick={aoAbrirNovoPedido} className="btn-primary header-novo-pedido-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
                 <Plus size={16} /> Novo Pedido
               </button>
             )}
@@ -168,6 +168,7 @@ export function Navbar({
             <button
               type="button"
               onClick={aoAlternarTema}
+              className="header-theme-toggle-btn"
               title={tema === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
               style={{
                 background: 'var(--bg-card)',
@@ -190,20 +191,21 @@ export function Navbar({
               {tema === 'dark' ? (
                 <>
                   <Sun size={17} color="#f59e0b" />
-                  <span>Claro</span>
+                  <span className="theme-btn-text">Claro</span>
                 </>
               ) : (
                 <>
                   <Moon size={17} color="#a855f7" />
-                  <span>Escuro</span>
+                  <span className="theme-btn-text">Escuro</span>
                 </>
               )}
             </button>
 
             {/* Card / Perfil do Usuário Logado */}
             {usuario && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '12px', borderLeft: '1px solid var(--border-color)' }}>
+              <div className="header-user-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '12px', borderLeft: '1px solid var(--border-color)' }}>
                 <div
+                  className="header-user-profile"
                   onClick={() => setModalPerfilAberto(true)}
                   style={{
                     display: 'flex',
@@ -233,7 +235,7 @@ export function Navbar({
                   }}>
                     <IconePerfil size={18} />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <div className="header-user-info" style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
                         {nomeExibicao}
@@ -252,6 +254,7 @@ export function Navbar({
 
                 {/* Botão de Sair Direct */}
                 <button
+                  className="header-logout-btn"
                   onClick={aoSair}
                   title="Sair da conta"
                   style={{

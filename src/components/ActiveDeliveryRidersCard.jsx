@@ -39,7 +39,7 @@ export function ActiveDeliveryRidersCard({ pedidos = [], usuario }) {
 
     return (
       <div style={{ marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <div className="active-riders-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             <Truck size={22} color="var(--primary-accent)" />
             Acompanhamento de Entrega ({meusPedidosEmRota.length})
@@ -132,14 +132,14 @@ export function ActiveDeliveryRidersCard({ pedidos = [], usuario }) {
   if (todosPedidosEmRota.length === 0) {
     return (
       <div
-        className="glass-panel"
+        className="glass-panel active-riders-empty-card"
         style={{
           padding: '20px 24px',
           borderRadius: '18px',
           marginBottom: '28px',
           display: 'flex',
           alignItems: 'center',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           borderLeft: '4px solid var(--primary-accent)'
         }}
       >
@@ -161,7 +161,7 @@ export function ActiveDeliveryRidersCard({ pedidos = [], usuario }) {
             </p>
           </div>
         </div>
-        <span className="status-badge" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
+        <span className="status-badge" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', flexShrink: 0 }}>
           Disponíveis para Chamada
         </span>
       </div>
@@ -186,7 +186,7 @@ export function ActiveDeliveryRidersCard({ pedidos = [], usuario }) {
 
   return (
     <div style={{ marginBottom: '28px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+      <div className="active-riders-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
           <Truck size={22} color="var(--primary-accent)" />
           Entregadores em Rota de Entrega ({listaGrupos.length})

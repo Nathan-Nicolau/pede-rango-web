@@ -320,13 +320,13 @@ export function CardapioView({ usuario }) {
         backgroundColor: 'var(--bg-card)', padding: '16px 20px', borderRadius: '16px', border: '1px solid var(--border-color)'
       }}>
         {/* Campo de Busca */}
-        <div style={{ position: 'relative', flex: '1 1 280px' }}>
-          <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+        <div className="search-input-wrapper" style={{ position: 'relative', flex: '1 1 280px' }}>
+          <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
           <input
-            type="text" className="form-input"
+            type="text" className="search-input-with-icon form-input"
             placeholder="Buscar por nome ou ingrediente..."
             value={busca} onChange={e => setBusca(e.target.value)}
-            style={{ paddingLeft: '40px', width: '100%' }}
+            style={{ paddingLeft: '42px', width: '100%' }}
           />
         </div>
 

@@ -173,7 +173,7 @@ function CadastrarClienteModal({ aoFechar, aoSalvarComSucesso }) {
               Dados do Perfil (opcionais)
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor="cli-cpf">CPF</label>
                 <input id="cli-cpf" type="text" className="form-input"
@@ -339,7 +339,7 @@ export function ClientesView() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Header */}
-      <div style={{
+      <div className="view-header-row" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px',
         padding: '20px 24px', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)',
       }}>
@@ -366,28 +366,30 @@ export function ClientesView() {
       </div>
 
       {/* Barra de busca */}
-      <div style={{
+      <div className="view-search-row" style={{
         display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
         padding: '14px 18px', backgroundColor: 'var(--bg-card)', borderRadius: '16px',
         border: '1px solid rgba(6,182,212,0.2)',
         background: 'linear-gradient(135deg, rgba(6,182,212,0.05) 0%, var(--bg-card) 100%)',
       }}>
-        <div style={{ position: 'relative', flex: '1 1 240px' }}>
-          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-          <input type="text" className="form-input"
+        <div className="search-input-wrapper" style={{ position: 'relative', width: '100%' }}>
+          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
+          <input type="text" className="search-input-with-icon form-input"
             placeholder="Buscar por nome, e-mail ou CPF..."
             value={busca} onChange={e => setBusca(e.target.value)}
-            style={{ paddingLeft: '36px', width: '100%' }}
+            style={{ paddingLeft: '42px', width: '100%' }}
           />
         </div>
-        <button onClick={carregarClientes} className="btn-secondary" style={{ padding: '10px 14px' }} title="Atualizar lista">
-          <RefreshCw size={16} className={carregando ? 'spin' : ''} />
-        </button>
-        {totalElementos > 0 && (
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-            <strong style={{ color: '#06b6d4' }}>{totalElementos}</strong> cliente(s) no total
-          </span>
-        )}
+        <div className="view-search-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={carregarClientes} className="btn-secondary" style={{ padding: '10px 14px' }} title="Atualizar lista">
+            <RefreshCw size={16} className={carregando ? 'spin' : ''} />
+          </button>
+          {totalElementos > 0 && (
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+              <strong style={{ color: '#06b6d4' }}>{totalElementos}</strong> cliente(s) no total
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Erro */}

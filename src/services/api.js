@@ -1,4 +1,24 @@
-const URL_BASE_API = import.meta.env.VITE_API_URL || 'http://api.pede-rango.local';
+function obterUrlBaseApi() {
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    // Suporte a acesso mobile via nip.io (ex: app.192.168.3.27.nip.io -> api.192.168.3.27.nip.io)
+    if (host.includes('nip.io')) {
+      return window.location.protocol + '//' + host.replace(/^app\./, 'api.');
+    }
+    if (host.includes('pede-rango.local')) {
+      return 'http://api.pede-rango.local';
+    }
+    if (host.includes('food-delivery.local')) {
+      return 'http://api.food-delivery.local';
+    }
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://api.pede-rango.local';
+    }
+  }
+  return import.meta.env.VITE_API_URL || 'http://api.pede-rango.local';
+}
+
+const URL_BASE_API = obterUrlBaseApi();
 
 export async function requisitarApi(endpoint, opcoes = {}) {
   const token = localStorage.getItem('token');
