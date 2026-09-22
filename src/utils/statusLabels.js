@@ -30,6 +30,21 @@ export const PERFIL_USUARIO_LABELS = {
   ADMIN: 'Administrador',
 };
 
+// FormaPagamento → Label legível
+export const FORMA_PAGAMENTO_LABELS = {
+  DINHEIRO: 'Dinheiro',
+  PIX: 'PIX',
+  CARTAO_CREDITO: 'Cartão de Crédito',
+  CARTAO_DEBITO: 'Cartão de Débito',
+};
+
+/**
+ * Retorna o label legível de uma forma de pagamento.
+ */
+export function labelFormaPagamento(forma) {
+  return FORMA_PAGAMENTO_LABELS[forma] || forma || 'Dinheiro';
+}
+
 /**
  * Retorna o label legível de um status de pedido.
  */
@@ -115,24 +130,60 @@ export const ORDEM_FLUXO_STATUS = [
 ];
 
 /**
- * Retorna as opções de status permitidas sem permitir retroceder o fluxo.
+ * Retorna as opções de status permitidas sem permitir retroceder o fluxo e respeitando o perfil operacional.
  */
-export function obterOpcoesStatusProximos(statusAtual) {
-  if (statusAtual === 'CANCELADO' || statusAtual === 'ENTREGUE') {
+export function obterOpcoesStatusProximos(statusAtual, perfil = 'ADMIN') {
+  if (!statusAtual || statusAtual === 'CANCELADO' || statusAtual === 'ENTREGUE') {
     return [];
   }
 
-  const idxAtual = ORDEM_FLUXO_STATUS.indexOf(statusAtual);
-  if (idxAtual === -1) {
-    return LISTA_STATUS_PEDIDO;
+  // Regra para RESTAURANTE: controla o ciclo de cozinha até PRONTO_PARA_ENTREGA
+  if (perfil === 'RESTAURANTE') {
+    if (statusAtual === 'RECEBIDO') {
+      return [
+        { value: 'RECEBIDO', label: 'Recebido' },
+        { value: 'EM_PREPARO', label: 'Em Preparo' },
+        { value: 'PRONTO_PARA_ENTREGA', label: 'Pronto para Entrega' }
+      ];
+    }
+    if (statusAtual === 'EM_PREPARO') {
+      return [
+        { value: 'EM_PREPARO', label: 'Em Preparo' },
+        { value: 'PRONTO_PARA_ENTREGA', label: 'Pronto para Entrega' }
+      ];
+    }
+    // Quando PRONTO_PARA_ENTREGA ou além, o restaurante não avança mais (cabe ao entregador)
+    return [];
   }
 
-  // Apenas mantém o status atual ou avança para os próximos no fluxo
-  const statusPermitidos = ORDEM_FLUXO_STATUS.slice(idxAtual);
+  // Regra para ENTREGADOR: controla o ciclo de transporte/entrega
+  if (perfil === 'ENTREGADOR') {
+    if (statusAtual === 'PRONTO_PARA_ENTREGA') {
+      return [
+        { value: 'PRONTO_PARA_ENTREGA', label: 'Pronto para Entrega' },
+        { value: 'SAIU_PARA_ENTREGA', label: 'Saiu para Entrega' }
+      ];
+    }
+    if (statusAtual === 'SAIU_PARA_ENTREGA') {
+      return [
+        { value: 'SAIU_PARA_ENTREGA', label: 'Saiu para Entrega' },
+        { value: 'ENTREGUE', label: 'Entregue' }
+      ];
+    }
+    return [];
+  }
 
-  return LISTA_STATUS_PEDIDO.filter(opt =>
-    statusPermitidos.includes(opt.value) || opt.value === 'CANCELADO'
-  );
+  // Regra para ADMIN: supervisão completa sequencial
+  if (perfil === 'ADMIN') {
+    const idxAtual = ORDEM_FLUXO_STATUS.indexOf(statusAtual);
+    if (idxAtual === -1) return LISTA_STATUS_PEDIDO;
+    const statusPermitidos = ORDEM_FLUXO_STATUS.slice(idxAtual);
+    return LISTA_STATUS_PEDIDO.filter(opt =>
+      statusPermitidos.includes(opt.value) && opt.value !== 'CANCELADO'
+    );
+  }
+
+  return [];
 }
 
 /**
@@ -142,24 +193,36 @@ export function podeAlterarStatusPedido(pedido, perfil) {
   if (!pedido || !pedido.status) return false;
   if (pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO') return false;
   if (perfil === 'CLIENTE') return false;
-  return perfil === 'ADMIN' || perfil === 'ENTREGADOR' || perfil === 'RESTAURANTE';
+
+  if (perfil === 'RESTAURANTE') {
+    return pedido.status === 'RECEBIDO' || pedido.status === 'EM_PREPARO';
+  }
+
+  if (perfil === 'ENTREGADOR') {
+    return pedido.status === 'PRONTO_PARA_ENTREGA' || pedido.status === 'SAIU_PARA_ENTREGA';
+  }
+
+  return perfil === 'ADMIN';
 }
 
 /**
- * Verifica se um pedido pode ser cancelado considerando o status atual e o perfil.
+ * Verifica se um pedido pode ser cancelado diretamente na UI considerando o status e perfil.
  */
 export function podeCancelarPedido(pedido, perfil) {
   if (!pedido || !pedido.status) return false;
   if (pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO') return false;
 
+  // Cliente: cancelamento direto permitido apenas enquanto RECEBIDO (antes de iniciar o preparo)
   if (perfil === 'CLIENTE') {
-    return ['RECEBIDO', 'EM_PREPARO', 'PRONTO_PARA_ENTREGA', 'SAIU_PARA_ENTREGA'].includes(pedido.status);
+    return pedido.status === 'RECEBIDO';
   }
 
+  // Entregador: reporta problema de entrega apenas em rota
   if (perfil === 'ENTREGADOR') {
     return pedido.status === 'SAIU_PARA_ENTREGA';
   }
 
+  // Restaurante e Admin: podem cancelar qualquer pedido não finalizado (por solicitação via WhatsApp, falta de item, etc.)
   if (perfil === 'ADMIN' || perfil === 'RESTAURANTE') {
     return ['RECEBIDO', 'EM_PREPARO', 'PRONTO_PARA_ENTREGA', 'SAIU_PARA_ENTREGA'].includes(pedido.status);
   }

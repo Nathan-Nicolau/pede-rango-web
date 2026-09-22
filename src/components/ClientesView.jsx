@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, User, Mail, Phone, MapPin, Hash,
   Eye, EyeOff, Plus, RefreshCw, Search,
-  CheckCircle, XCircle, X, Lock, AlertTriangle
+  CheckCircle, XCircle, X, Lock, AlertTriangle, MessageSquare
 } from 'lucide-react';
 import { servicoClientes } from '../services/api';
 import { PaginationControls } from './PaginationControls';
+import { abrirWhatsapp } from '../utils/whatsapp';
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 const mascararCpf = (cpf) => {
@@ -175,16 +176,16 @@ function CadastrarClienteModal({ aoFechar, aoSalvarComSucesso }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="cli-cpf">CPF</label>
-                <input id="cli-cpf" type="text" className="form-input"
-                  placeholder="000.000.000-00"
-                  value={cpf} onChange={e => setCpf(e.target.value)} maxLength={14} />
+                <label htmlFor="cli-cpf">CPF (Apenas números)</label>
+                <input id="cli-cpf" type="text" inputMode="numeric" className="form-input"
+                  placeholder="00000000000"
+                  value={cpf} onChange={e => setCpf(e.target.value.replace(/\D/g, ''))} maxLength={11} />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor="cli-telefone">Telefone</label>
-                <input id="cli-telefone" type="text" className="form-input"
-                  placeholder="(11) 99999-9999"
-                  value={telefone} onChange={e => setTelefone(e.target.value)} maxLength={15} />
+                <label htmlFor="cli-telefone">Telefone (Apenas números)</label>
+                <input id="cli-telefone" type="text" inputMode="numeric" className="form-input"
+                  placeholder="11999999999"
+                  value={telefone} onChange={e => setTelefone(e.target.value.replace(/\D/g, ''))} maxLength={11} />
               </div>
             </div>
 
@@ -277,9 +278,32 @@ function ClienteCard({ cliente }) {
 
         {/* Telefone */}
         {cliente.telefone && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            <Phone size={14} color="#06b6d4" style={{ flexShrink: 0 }} />
-            <span>{formatarTelefone(cliente.telefone)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Phone size={14} color="#06b6d4" style={{ flexShrink: 0 }} />
+              <span>{formatarTelefone(cliente.telefone)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => abrirWhatsapp(cliente.telefone, `Olá ${cliente.nome || ''}, contato da equipe Pede Rango.`)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#25D366',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                padding: '2px 6px',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(37, 211, 102, 0.12)'
+              }}
+              title="Chamar cliente no WhatsApp"
+            >
+              <MessageSquare size={12} /> WhatsApp
+            </button>
           </div>
         )}
 

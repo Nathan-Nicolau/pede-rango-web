@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { servicoEntregadores, servicoPedidos } from '../services/api';
 import { PaginationControls } from './PaginationControls';
 import { CreateEntregadorModal } from './CreateEntregadorModal';
-import { Truck, Plus, Search, User, Phone, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { Truck, Plus, Search, User, Phone, CheckCircle2, XCircle, RefreshCw, MessageSquare } from 'lucide-react';
+import { abrirWhatsapp } from '../utils/whatsapp';
 
 export function EntregadoresView() {
   const [entregadores, definirEntregadores] = useState([]);
@@ -215,9 +216,34 @@ export function EntregadoresView() {
                     <span><Truck size={14} style={{ display: 'inline', marginRight: '6px' }} /> Veículo:</span>
                     <strong>{entregador.veiculo} {entregador.placa ? `(${entregador.placa})` : ''}</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-secondary)' }}>
                     <span><Phone size={14} style={{ display: 'inline', marginRight: '6px' }} /> Telefone:</span>
-                    <span>{entregador.telefone}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{entregador.telefone || '—'}</span>
+                      {entregador.telefone && (
+                        <button
+                          type="button"
+                          onClick={() => abrirWhatsapp(entregador.telefone, `Olá ${entregador.nome || ''}, contato operacional Pede Rango.`)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#25D366',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            padding: '2px 6px',
+                            borderRadius: '6px',
+                            backgroundColor: 'rgba(37, 211, 102, 0.12)'
+                          }}
+                          title="Chamar entregador no WhatsApp"
+                        >
+                          <MessageSquare size={12} /> WhatsApp
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

@@ -3,7 +3,7 @@ import { servicoProdutos } from '../services/api';
 import { PaginationControls } from './PaginationControls';
 import {
   UtensilsCrossed, Plus, Search, RefreshCw, AlertTriangle,
-  CheckCircle, XCircle, Edit2, X
+  CheckCircle, XCircle, Edit2, X, Clock, Bike, Store, ShoppingBag
 } from 'lucide-react';
 
 const CATEGORIAS = ['Lanches', 'Pizzas', 'Acompanhamentos', 'Bebidas', 'Combos', 'Sobremesas'];
@@ -101,9 +101,9 @@ function CadastrarProdutoModal({ produtoParaEditar, aoFechar, aoSalvarComSucesso
 
             <div className="form-group">
               <label htmlFor="prod-preco">Preço (R$) *</label>
-              <input id="prod-preco" type="number" step="0.01" min="0.01" className="form-input"
+              <input id="prod-preco" type="text" inputMode="decimal" className="form-input"
                 placeholder="Ex: 29.90"
-                value={preco} onChange={e => setPreco(e.target.value)} required />
+                value={preco} onChange={e => setPreco(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1'))} required />
             </div>
           </div>
 
@@ -129,72 +129,137 @@ function CadastrarProdutoModal({ produtoParaEditar, aoFechar, aoSalvarComSucesso
   );
 }
 
-// ─── Card do Produto ──────────────────────────────────────────────────────────
-function CardProduto({ produto, podeEditar, aoEditar }) {
+// ─── Card do Produto Modernizado ─────────────────────────────────────────────
+function CardProduto({ produto, podeEditar, aoEditar, aoAlternarStatus, alternandoStatus, aoPedirItem, aberta, isCliente }) {
+  const isAtivo = produto.ativo !== false;
+
   return (
     <div
-      className="glass-panel"
+      className="glass-panel hover-lift"
       style={{
-        borderRadius: '16px',
-        padding: '20px',
+        borderRadius: '18px',
+        padding: '22px',
         display: 'flex',
         flexDirection: 'column',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         gap: '16px',
-        opacity: produto.ativo ? 1 : 0.65,
-        transition: 'opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
-        borderLeft: produto.ativo ? '3px solid var(--primary-accent)' : '3px solid var(--border-color)',
+        opacity: isAtivo ? 1 : 0.65,
+        border: isAtivo ? '1px solid var(--border-color)' : '1px dashed rgba(239, 68, 68, 0.4)',
+        borderTop: isAtivo ? '3px solid var(--primary-accent)' : '3px solid #ef4444',
+        backgroundColor: isAtivo ? 'var(--bg-card)' : 'rgba(239, 68, 68, 0.03)',
+        position: 'relative',
+        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.4)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-card)'; }}
     >
-      {/* Topo: nome + categoria */}
+      {/* Topo: Nome, Categoria e Status */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '10px' }}>
-          <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, flex: 1, lineHeight: 1.3 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '8px' }}>
+          <h4 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, flex: 1, lineHeight: 1.3 }}>
             {produto.nome}
           </h4>
           <span style={{
-            backgroundColor: 'rgba(211,1,1,0.15)', color: 'var(--primary-accent)',
-            border: '1px solid rgba(211,1,1,0.3)', fontSize: '0.75rem',
-            padding: '3px 10px', borderRadius: '999px', fontWeight: 600, flexShrink: 0,
+            backgroundColor: 'rgba(211,1,1,0.1)',
+            color: 'var(--primary-accent)',
+            border: '1px solid rgba(211,1,1,0.25)',
+            fontSize: '0.72rem',
+            padding: '3px 9px',
+            borderRadius: '999px',
+            fontWeight: 700,
+            letterSpacing: '0.3px',
+            flexShrink: 0,
+            textTransform: 'uppercase'
           }}>
             {produto.categoria}
           </span>
         </div>
 
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
+        <p style={{
+          fontSize: '0.86rem',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.5,
+          margin: 0,
+          minHeight: '40px',
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
+        }}>
           {produto.descricao || 'Sem descrição cadastrada.'}
         </p>
       </div>
 
-      {/* Rodapé: preço + status + botão editar */}
+      {/* Rodapé: Preço + Ações */}
       <div style={{
         borderTop: '1px solid var(--border-color)',
-        paddingTop: '14px',
+        paddingTop: '16px',
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         gap: '12px',
-        flexWrap: 'nowrap'
+        flexWrap: 'wrap'
       }}>
-        <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary-accent)', whiteSpace: 'nowrap' }}>
-          R$ {Number(produto.preco).toFixed(2)}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
+            Preço Unitário
+          </span>
+          <span style={{ fontSize: '1.35rem', fontWeight: 800, color: isAtivo ? 'var(--text-main)' : 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+            R$ {Number(produto.preco).toFixed(2)}
+          </span>
+          {!isAtivo && (
+            <span style={{ fontSize: '0.72rem', color: '#f87171', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
+              ⛔ Esgotado hoje
+            </span>
+          )}
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {/* Badge status */}
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '5px',
-            padding: '4px 10px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600,
-            backgroundColor: produto.ativo ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
-            color: produto.ativo ? '#34d399' : '#f87171',
-            border: `1px solid ${produto.ativo ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'}`,
-            whiteSpace: 'nowrap',
-          }}>
-            {produto.ativo ? <CheckCircle size={12} /> : <XCircle size={12} />}
-            {produto.ativo ? 'Ativo' : 'Inativo'}
-          </span>
+          {/* Botão Pedir Esse (Disponível para Clientes e Visitantes) */}
+          {isCliente && (
+            <button
+              onClick={() => aoPedirItem && aoPedirItem(produto)}
+              disabled={!isAtivo || !aberta}
+              className="btn-primary hover-scale"
+              style={{
+                padding: '8px 14px',
+                fontSize: '0.82rem',
+                borderRadius: '10px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                opacity: (isAtivo && aberta) ? 1 : 0.45,
+                cursor: (isAtivo && aberta) ? 'pointer' : 'not-allowed',
+                boxShadow: (isAtivo && aberta) ? '0 4px 12px rgba(211, 1, 1, 0.3)' : 'none'
+              }}
+              title={!aberta ? 'Loja Fechada' : !isAtivo ? 'Item Esgotado' : 'Fazer pedido deste item agora'}
+            >
+              <ShoppingBag size={14} /> Pedir Esse
+            </button>
+          )}
+
+          {/* Botão de Pausa Rápida (Toggle Switch para Restaurante/Admin) */}
+          {podeEditar && (
+            <button
+              onClick={() => aoAlternarStatus(produto)}
+              disabled={alternandoStatus}
+              title={isAtivo ? 'Pausar item (marcar como esgotado hoje)' : 'Reativar item no cardápio'}
+              style={{
+                backgroundColor: isAtivo ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                border: `1px solid ${isAtivo ? 'rgba(239, 68, 68, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+                color: isAtivo ? '#f87171' : '#34d399',
+                borderRadius: '8px',
+                padding: '7px 11px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {isAtivo ? 'Pausar' : 'Ativar'}
+            </button>
+          )}
 
           {/* Botão de Editar para Perfis ADMIN e RESTAURANTE */}
           {podeEditar && (
@@ -202,12 +267,12 @@ function CardProduto({ produto, podeEditar, aoEditar }) {
               onClick={() => aoEditar(produto)}
               title="Editar produto"
               style={{
-                backgroundColor: 'rgba(211,1,1,0.12)',
+                backgroundColor: 'rgba(211,1,1,0.1)',
                 border: '1px solid rgba(211,1,1,0.3)',
                 color: 'var(--primary-accent)',
                 borderRadius: '8px',
-                padding: '6px 10px',
-                fontSize: '0.8rem',
+                padding: '7px 11px',
+                fontSize: '0.78rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
@@ -215,10 +280,10 @@ function CardProduto({ produto, podeEditar, aoEditar }) {
                 gap: '4px',
                 transition: 'all 0.2s ease',
               }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(211,1,1,0.22)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(211,1,1,0.12)'}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(211,1,1,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(211,1,1,0.1)'}
             >
-              <Edit2 size={14} /> Editar
+              <Edit2 size={13} /> Editar
             </button>
           )}
         </div>
@@ -227,8 +292,7 @@ function CardProduto({ produto, podeEditar, aoEditar }) {
   );
 }
 
-// ─── Componente Principal ─────────────────────────────────────────────────────
-export function CardapioView({ usuario }) {
+export function CardapioView({ usuario, configuracao, aoFazerPedido, aoPedirItem }) {
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -241,8 +305,26 @@ export function CardapioView({ usuario }) {
 
   const [modalAberto, setModalAberto] = useState(false);
   const [produtoParaEditar, setProdutoParaEditar] = useState(null);
+  const [alternandoStatusId, setAlternandoStatusId] = useState(null);
 
   const podeEditar = usuario?.perfil === 'ADMIN' || usuario?.perfil === 'RESTAURANTE';
+  const isCliente = usuario?.perfil === 'CLIENTE' || !usuario;
+  const aberta = configuracao ? configuracao.operacionalmenteAbertaHoje : true;
+  const tempoEstimado = configuracao?.tempoEstimadoEntrega || '30-45 min';
+  const taxaEntrega = Number(configuracao?.taxaEntregaPadrao ?? 5).toFixed(2);
+
+  const aoAlternarStatus = async (produto) => {
+    const novoStatus = produto.ativo === false ? true : false;
+    setAlternandoStatusId(produto.id);
+    try {
+      await servicoProdutos.atualizarStatus(produto.id, novoStatus);
+      setProdutos(prev => prev.map(p => p.id === produto.id ? { ...p, ativo: novoStatus } : p));
+    } catch (err) {
+      alert('Erro ao alterar status do produto: ' + (err.message || 'Falha de comunicação'));
+    } finally {
+      setAlternandoStatusId(null);
+    }
+  };
 
   useEffect(() => {
     carregarProdutos();
@@ -282,9 +364,45 @@ export function CardapioView({ usuario }) {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-      {/* Header do Cardápio */}
+      {/* Banner de Status Operacional da Loja */}
+      {!aberta && (
+        <div style={{
+          backgroundColor: 'rgba(239, 68, 68, 0.12)',
+          border: '1px solid rgba(239, 68, 68, 0.35)',
+          borderRadius: '16px',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '10px',
+              backgroundColor: 'rgba(239, 68, 68, 0.2)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center'
+            }}>
+              <Store size={20} color="#f87171" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, color: '#f87171', fontSize: '0.95rem' }}>
+                🔴 Estabelecimento Fechado no Momento
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                {configuracao?.mensagemFechado || 'Não estamos recebendo pedidos no momento. Consulte o cardápio e volte logo!'}
+              </div>
+            </div>
+          </div>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+            Expediente reinicia automaticamente às 00:00 ou na abertura do turno.
+          </span>
+        </div>
+      )}
+
+      {/* Header do Cardápio com Informações Comerciais */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px',
         padding: '20px 24px', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-color)'
@@ -298,20 +416,56 @@ export function CardapioView({ usuario }) {
             <UtensilsCrossed size={24} color="var(--primary-accent)" />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
-              Cardápio de Produtos
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-              Consulte itens disponíveis e pratos do menu oficial.
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                Cardápio de Produtos
+              </h2>
+              <span style={{
+                fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: '999px',
+                backgroundColor: aberta ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                color: aberta ? '#34d399' : '#f87171',
+                border: `1px solid ${aberta ? 'rgba(52, 211, 153, 0.3)' : 'rgba(248, 113, 113, 0.3)'}`,
+                display: 'inline-flex', alignItems: 'center', gap: '4px'
+              }}>
+                {aberta ? '🟢 Aberto para Pedidos' : '🔴 Loja Fechada'}
+              </span>
+            </div>
+            {/* Badges de Operação: Tempo Estimado e Taxa Fixa */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px', flexWrap: 'wrap', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <Clock size={14} color="var(--primary-accent)" /> Tempo de Entrega: <strong style={{ color: 'var(--text-main)' }}>{tempoEstimado}</strong>
+              </span>
+              <span>•</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <Bike size={14} color="#34d399" /> Taxa Padrão: <strong style={{ color: '#34d399' }}>R$ {taxaEntrega}</strong>
+              </span>
+            </div>
           </div>
         </div>
 
-        {podeEditar && (
-          <button onClick={aoAbrirCriacao} className="btn-primary" style={{ padding: '10px 18px' }}>
-            <Plus size={18} /> Novo Produto
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {isCliente && aoFazerPedido && (
+            <button
+              onClick={aoFazerPedido}
+              disabled={!aberta}
+              className="btn-primary"
+              style={{
+                padding: '10px 18px',
+                opacity: aberta ? 1 : 0.5,
+                cursor: aberta ? 'pointer' : 'not-allowed'
+              }}
+              title={aberta ? 'Fazer Pedido Agora' : 'Estabelecimento Fechado'}
+            >
+              <ShoppingBag size={18} /> Fazer Pedido
+            </button>
+          )}
+
+          {podeEditar && (
+            <button onClick={aoAbrirCriacao} className="btn-primary" style={{ padding: '10px 18px' }}>
+              <Plus size={18} /> Novo Produto
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Barra de Filtros e Busca */}
@@ -374,6 +528,11 @@ export function CardapioView({ usuario }) {
               produto={prod}
               podeEditar={podeEditar}
               aoEditar={aoAbrirEdicao}
+              aoAlternarStatus={aoAlternarStatus}
+              alternandoStatus={alternandoStatusId === prod.id}
+              aoPedirItem={aoPedirItem}
+              aberta={aberta}
+              isCliente={isCliente}
             />
           ))}
         </div>

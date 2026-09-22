@@ -387,8 +387,8 @@ function CadastrarUsuarioModal({ aoFechar, aoSalvarComSucesso }) {
   );
 }
 
-export function UsuariosView() {
-  const [perfilAtivo, setPerfilAtivo] = useState('CLIENTE');
+export function UsuariosView({ perfilInicial = 'CLIENTE' }) {
+  const [perfilAtivo, setPerfilAtivo] = useState(perfilInicial);
   const [usuarios, setUsuarios] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -400,6 +400,13 @@ export function UsuariosView() {
   const [modalCadastroAberto, setModalCadastroAberto] = useState(false);
   // contagem por perfil (carregada uma vez)
   const [contagemPorPerfil, setContagemPorPerfil] = useState({});
+
+  useEffect(() => {
+    if (perfilInicial) {
+      setPerfilAtivo(perfilInicial);
+      setPagina(0);
+    }
+  }, [perfilInicial]);
 
   const config = CONFIG_PERFIL[perfilAtivo];
 

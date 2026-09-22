@@ -3,8 +3,13 @@ import { Utensils, LogOut, Plus, User, Sun, Moon, ShieldCheck, Truck, X, Mail, C
 import { labelPerfil } from '../utils/statusLabels';
 import { servicoClientes, servicoEntregadores } from '../services/api';
 
-export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTema }) {
-  const [modalPerfilAberto, setModalPerfilAberto] = useState(false);
+export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTema, configuracao, modalPerfilAberto: modalPerfilExterno, aoFecharPerfil }) {
+  const [modalPerfilLocal, setModalPerfilLocal] = useState(false);
+  const modalPerfilAberto = modalPerfilExterno !== undefined ? modalPerfilExterno : modalPerfilLocal;
+  const setModalPerfilAberto = (val) => {
+    setModalPerfilLocal(val);
+    if (!val && aoFecharPerfil) aoFecharPerfil();
+  };
   const nomeExibicao = usuario?.nome || usuario?.name || usuario?.email || 'Usuário';
   const perfil = usuario?.perfil || 'CLIENTE';
 
@@ -21,12 +26,15 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
   // Configuração por perfil
   const perfisConfig = {
     ADMIN: { color: '#D30101', bg: 'rgba(211, 1, 1, 0.15)', border: 'rgba(211, 1, 1, 0.3)', icon: ShieldCheck },
+    RESTAURANTE: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', icon: Utensils },
     ENTREGADOR: { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.3)', icon: Truck },
     CLIENTE: { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)', icon: User },
   };
 
   const cfg = perfisConfig[perfil] || perfisConfig.CLIENTE;
   const IconePerfil = cfg.icon;
+
+  const estaAberta = configuracao?.operacionalmenteAbertaHoje;
 
   // Carrega dados do perfil ao abrir o modal
   useEffect(() => {
@@ -120,28 +128,71 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
           {/* Marca (Alinhado à Esquerda) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
             <div style={{
-              background: 'linear-gradient(135deg, #D30101 0%, #9e0000 100%)',
-              padding: '10px',
+              width: '42px',
+              height: '42px',
               borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: tema === 'light' ? '0 4px 14px rgba(211, 1, 1, 0.15)' : '0 4px 14px rgba(211, 1, 1, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(211, 1, 1, 0.3)'
+              backgroundColor: tema === 'light' ? '#ffffff' : '#121216',
+              border: tema === 'light' ? '1px solid rgba(211, 1, 1, 0.2)' : '1px solid rgba(211, 1, 1, 0.3)',
+              transition: 'all 0.3s ease'
             }}>
-              <Utensils color="#ffffff" size={22} />
+              <img
+                src={tema === 'light' ? '/assets/logo-pede-rango-light.png' : '/assets/logo-pede-rango.png'}
+                alt="Pede Rango Delivery"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
             <div>
-              <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
-                FoodDelivery <span style={{ color: 'var(--primary-accent)', fontSize: '0.85rem', fontWeight: 600 }}>WEB</span>
-              </h1>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>Gestão e Operações de Delivery</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
+                  Pede Rango <span style={{ color: 'var(--primary-accent)', fontSize: '0.85rem', fontWeight: 600 }}>WEB</span>
+                </h1>
+                {configuracao && (
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    backgroundColor: estaAberta ? 'rgba(16, 185, 129, 0.15)' : 'rgba(211, 1, 1, 0.15)',
+                    color: estaAberta ? '#10b981' : '#f87171',
+                    border: `1px solid ${estaAberta ? 'rgba(16, 185, 129, 0.35)' : 'rgba(211, 1, 1, 0.35)'}`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: estaAberta ? '#10b981' : '#f87171' }} />
+                    {estaAberta ? 'Aberto' : 'Fechado'}
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                {estaAberta && configuracao?.tempoEstimadoMinMinutos
+                  ? `Entrega: ${configuracao.tempoEstimadoMinMinutos}-${configuracao.tempoEstimadoMaxMinutos} min • Taxa R$ ${Number(configuracao.taxaEntregaPadrao || 0).toFixed(2)}`
+                  : 'Gestão e Operações de Delivery'}
+              </p>
             </div>
           </div>
 
           {/* Controles de Ação (Alinhado à Direita) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginLeft: 'auto' }}>
-            {usuario && (perfil === 'ADMIN' || perfil === 'CLIENTE') && (
-              <button onClick={aoAbrirNovoPedido} className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+            {usuario && perfil === 'CLIENTE' && (
+              <button
+                onClick={aoAbrirNovoPedido}
+                disabled={configuracao && !estaAberta}
+                className="btn-primary"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.85rem',
+                  opacity: (configuracao && !estaAberta) ? 0.5 : 1,
+                  cursor: (configuracao && !estaAberta) ? 'not-allowed' : 'pointer',
+                  filter: (configuracao && !estaAberta) ? 'grayscale(0.6)' : 'none'
+                }}
+                title={configuracao && !estaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer novo pedido'}
+              >
                 <Plus size={16} /> Novo Pedido
               </button>
             )}
