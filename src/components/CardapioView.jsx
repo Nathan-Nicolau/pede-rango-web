@@ -309,7 +309,7 @@ export function CardapioView({ usuario, configuracao, aoFazerPedido, aoPedirItem
 
   const podeEditar = usuario?.perfil === 'ADMIN' || usuario?.perfil === 'RESTAURANTE';
   const isCliente = usuario?.perfil === 'CLIENTE' || !usuario;
-  const aberta = configuracao ? configuracao.operacionalmenteAbertaHoje : true;
+  const aberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
   const tempoEstimado = configuracao?.tempoEstimadoEntrega || '30-45 min';
   const taxaEntrega = Number(configuracao?.taxaEntregaPadrao ?? 5).toFixed(2);
 
@@ -446,7 +446,10 @@ export function CardapioView({ usuario, configuracao, aoFazerPedido, aoPedirItem
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {isCliente && aoFazerPedido && (
             <button
-              onClick={aoFazerPedido}
+              onClick={() => {
+                if (!aberta) return;
+                aoFazerPedido();
+              }}
               disabled={!aberta}
               className="btn-primary"
               style={{
@@ -521,7 +524,7 @@ export function CardapioView({ usuario, configuracao, aoFazerPedido, aoPedirItem
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Tente alterar a categoria ou o termo de busca.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '20px' }}>
+        <div className="cardapio-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '20px' }}>
           {produtosFiltrados.map(prod => (
             <CardProduto
               key={prod.id}

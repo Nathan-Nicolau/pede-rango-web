@@ -66,7 +66,7 @@ export function NavigationTabs({ perfil, abaAtiva, aoSelecionarAba }) {
   return (
     <div
       ref={containerRef}
-      className="nav-tabs-container desktop-nav-tabs"
+      className="nav-tabs-container"
       style={{
         position: 'relative',
         display: 'flex',

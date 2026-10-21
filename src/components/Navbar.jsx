@@ -3,12 +3,19 @@ import { Utensils, LogOut, Plus, User, Sun, Moon, ShieldCheck, Truck, X, Mail, C
 import { labelPerfil } from '../utils/statusLabels';
 import { servicoClientes, servicoEntregadores } from '../services/api';
 
-export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTema, configuracao, modalPerfilAberto: modalPerfilExterno, aoFecharPerfil }) {
+export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTema, configuracao, modalPerfilAberto: modalPerfilExterno, aoAbrirPerfil, aoFecharPerfil }) {
   const [modalPerfilLocal, setModalPerfilLocal] = useState(false);
-  const modalPerfilAberto = modalPerfilExterno !== undefined ? modalPerfilExterno : modalPerfilLocal;
+  const isControlled = modalPerfilExterno !== undefined;
+  const modalPerfilAberto = isControlled ? modalPerfilExterno : modalPerfilLocal;
   const setModalPerfilAberto = (val) => {
-    setModalPerfilLocal(val);
-    if (!val && aoFecharPerfil) aoFecharPerfil();
+    if (!isControlled) {
+      setModalPerfilLocal(val);
+    }
+    if (val) {
+      if (aoAbrirPerfil) aoAbrirPerfil();
+    } else {
+      if (aoFecharPerfil) aoFecharPerfil();
+    }
   };
   const nomeExibicao = usuario?.nome || usuario?.name || usuario?.email || 'Usuário';
   const perfil = usuario?.perfil || 'CLIENTE';
@@ -34,7 +41,7 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
   const cfg = perfisConfig[perfil] || perfisConfig.CLIENTE;
   const IconePerfil = cfg.icon;
 
-  const estaAberta = configuracao?.operacionalmenteAbertaHoje;
+  const estaAberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
 
   // Carrega dados do perfil ao abrir o modal
   useEffect(() => {
@@ -115,18 +122,18 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
         zIndex: 100,
         transition: 'background-color 0.3s ease, border-color 0.3s ease'
       }}>
-        <div style={{
+        <div className="navbar-container" style={{
           maxWidth: '1200px',
           margin: '0 auto',
           padding: '14px 24px',
           display: 'flex',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           alignItems: 'center',
           width: '100%',
           boxSizing: 'border-box'
         }}>
           {/* Marca (Alinhado à Esquerda) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <div className="navbar-brand-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
             <div style={{
               width: '42px',
               height: '42px',
@@ -148,7 +155,7 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h1 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
+                <h1 className="navbar-brand-title" style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
                   Pede Rango <span style={{ color: 'var(--primary-accent)', fontSize: '0.85rem', fontWeight: 600 }}>WEB</span>
                 </h1>
                 {configuracao && (
@@ -169,7 +176,7 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
                   </span>
                 )}
               </div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+              <p className="navbar-brand-subtitle" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
                 {estaAberta && configuracao?.tempoEstimadoMinMinutos
                   ? `Entrega: ${configuracao.tempoEstimadoMinMinutos}-${configuracao.tempoEstimadoMaxMinutos} min • Taxa R$ ${Number(configuracao.taxaEntregaPadrao || 0).toFixed(2)}`
                   : 'Gestão e Operações de Delivery'}
@@ -178,20 +185,23 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
           </div>
 
           {/* Controles de Ação (Alinhado à Direita) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginLeft: 'auto' }}>
+          <div className="navbar-actions-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto' }}>
             {usuario && perfil === 'CLIENTE' && (
               <button
-                onClick={aoAbrirNovoPedido}
-                disabled={configuracao && !estaAberta}
+                onClick={() => {
+                  if (!estaAberta) return;
+                  aoAbrirNovoPedido && aoAbrirNovoPedido();
+                }}
+                disabled={!estaAberta}
                 className="btn-primary"
                 style={{
                   padding: '8px 16px',
                   fontSize: '0.85rem',
-                  opacity: (configuracao && !estaAberta) ? 0.5 : 1,
-                  cursor: (configuracao && !estaAberta) ? 'not-allowed' : 'pointer',
-                  filter: (configuracao && !estaAberta) ? 'grayscale(0.6)' : 'none'
+                  opacity: !estaAberta ? 0.5 : 1,
+                  cursor: !estaAberta ? 'not-allowed' : 'pointer',
+                  filter: !estaAberta ? 'grayscale(0.6)' : 'none'
                 }}
-                title={configuracao && !estaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer novo pedido'}
+                title={!estaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer novo pedido'}
               >
                 <Plus size={16} /> Novo Pedido
               </button>
@@ -201,6 +211,7 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
             <button
               type="button"
               onClick={aoAlternarTema}
+              className="navbar-theme-btn"
               title={tema === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
               style={{
                 background: 'var(--bg-card)',
@@ -223,26 +234,28 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
               {tema === 'dark' ? (
                 <>
                   <Sun size={17} color="#f59e0b" />
-                  <span>Claro</span>
+                  <span className="navbar-btn-text">Claro</span>
                 </>
               ) : (
                 <>
                   <Moon size={17} color="#a855f7" />
-                  <span>Escuro</span>
+                  <span className="navbar-btn-text">Escuro</span>
                 </>
               )}
             </button>
 
             {/* Card / Perfil do Usuário Logado */}
             {usuario && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '12px', borderLeft: '1px solid var(--border-color)' }}>
+              <div className="navbar-user-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--border-color)' }}>
                 <div
                   onClick={() => setModalPerfilAberto(true)}
+                  className="navbar-user-btn"
+                  title={`Perfil: ${nomeExibicao} (${labelPerfil(perfil)})`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    padding: '6px 12px',
+                    padding: '6px 10px',
                     borderRadius: '12px',
                     backgroundColor: 'var(--bg-card)',
                     border: `1px solid ${cfg.border}`,
@@ -253,8 +266,8 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--bg-card)'}
                 >
                   <div style={{
-                    width: '34px',
-                    height: '34px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '10px',
                     backgroundColor: cfg.bg,
                     border: `1px solid ${cfg.border}`,
@@ -264,16 +277,16 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
                     color: cfg.color,
                     flexShrink: 0
                   }}>
-                    <IconePerfil size={18} />
+                    <IconePerfil size={17} />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <div className="navbar-user-info" style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>
                         {nomeExibicao}
                       </span>
                     </div>
                     <span style={{
-                      fontSize: '0.72rem',
+                      fontSize: '0.7rem',
                       fontWeight: 600,
                       color: cfg.color,
                       display: 'inline-block'
@@ -286,6 +299,7 @@ export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTem
                 {/* Botão de Sair Direct */}
                 <button
                   onClick={aoSair}
+                  className="navbar-logout-btn"
                   title="Sair da conta"
                   style={{
                     background: 'transparent',

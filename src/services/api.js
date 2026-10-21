@@ -13,7 +13,7 @@ const calcularUrlBaseApi = () => {
     }
 
     // Se estiver usando domínio local (ex: app.pede-rango.local -> api.pede-rango.local)
-    if (hostname.includes('pede-rango.local') || hostname.includes('food-delivery.local')) {
+    if (hostname.includes('pede-rango.local')) {
       const apiHost = hostname.replace(/^app\./, 'api.');
       const portaStr = (port && port !== '80' && port !== '443') ? `:${port}` : '';
       return `${protocol}//${apiHost}${portaStr}`;
@@ -464,7 +464,7 @@ export const servicoClientes = {
   },
 };
 
-const CHAVE_CARDAPIO_LOCAL = 'food_delivery_cardapio_itens';
+const CHAVE_CARDAPIO_LOCAL = 'pede_rango_cardapio_itens';
 
 const ITENS_CARDAPIO_SEED = [
   { id: '1', nome: 'X-Salada Especial', categoria: 'Lanches', precoUnitario: 28.90, descricao: 'Pão artesanal, hambúrguer 180g, queijo prato, alface, tomate e maionese da casa.' },

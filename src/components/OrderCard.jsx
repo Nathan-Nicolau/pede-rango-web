@@ -8,6 +8,7 @@ export function OrderCard({ pedido, usuario, configuracao, aoClicarCard, aoAtual
   const perfil = usuario?.perfil || 'CLIENTE';
 
   const isFinalizado = pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO';
+  const estaAberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
   const podeAlterarStatus = podeAlterarStatusPedido(pedido, perfil);
   const podeCancelar = podeCancelarPedido(pedido, perfil);
   const opcoesProximas = obterOpcoesStatusProximos(pedido.status, perfil);
@@ -272,29 +273,35 @@ export function OrderCard({ pedido, usuario, configuracao, aoClicarCard, aoAtual
         ) : perfil === 'CLIENTE' && isFinalizado && aoRepetirPedido ? (
           <button
             type="button"
+            disabled={!estaAberta}
             onClick={(e) => {
               e.stopPropagation();
+              if (!estaAberta) {
+                alert('O estabelecimento está temporariamente fechado para novos pedidos.');
+                return;
+              }
               aoRepetirPedido(pedido);
             }}
             style={{
               width: '100%',
-              backgroundColor: 'rgba(211, 1, 1, 0.12)',
-              border: '1px solid var(--primary-accent)',
-              color: 'var(--primary-accent)',
+              backgroundColor: estaAberta ? 'rgba(211, 1, 1, 0.12)' : 'rgba(150, 150, 150, 0.12)',
+              border: `1px solid ${estaAberta ? 'var(--primary-accent)' : 'var(--border-color)'}`,
+              color: estaAberta ? 'var(--primary-accent)' : 'var(--text-secondary)',
               padding: '8px 12px',
               borderRadius: '10px',
               fontWeight: 700,
               fontSize: '0.85rem',
-              cursor: 'pointer',
+              cursor: estaAberta ? 'pointer' : 'not-allowed',
+              opacity: estaAberta ? 1 : 0.6,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
               transition: 'all 0.2s ease',
             }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(211, 1, 1, 0.22)'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(211, 1, 1, 0.12)'}
-            title="Fazer um novo pedido com os mesmos itens deste"
+            onMouseEnter={e => { if (estaAberta) e.currentTarget.style.backgroundColor = 'rgba(211, 1, 1, 0.22)'; }}
+            onMouseLeave={e => { if (estaAberta) e.currentTarget.style.backgroundColor = 'rgba(211, 1, 1, 0.12)'; }}
+            title={!estaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer um novo pedido com os mesmos itens deste'}
           >
             <RotateCcw size={15} /> Repetir Pedido
           </button>

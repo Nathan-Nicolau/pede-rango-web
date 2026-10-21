@@ -16,7 +16,6 @@ import { EntregadorOrdersView } from './components/EntregadorOrdersView';
 import { AdminDashboardView } from './components/AdminDashboardView';
 import { StoreConfigView } from './components/StoreConfigView';
 import { NavigationTabs } from './components/NavigationTabs';
-import { BottomNav } from './components/BottomNav';
 import { servicoAutenticacao, servicoPedidos, servicoConfiguracoes } from './services/api';
 import { Search, Filter, RefreshCw, AlertTriangle, Plus, Sun, Moon, Package, Truck, UtensilsCrossed, XCircle, Users, UserCheck, History, TrendingUp, Volume2, VolumeX, Bell } from 'lucide-react';
 import { LISTA_STATUS_PEDIDO } from './utils/statusLabels';
@@ -107,8 +106,23 @@ export default function App() {
     definirTema((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  const estaLojaAberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
+
+  const aoTentarAbrirNovoPedido = (itensPreSelecionados = null) => {
+    if (usuario?.perfil === 'CLIENTE' && !estaLojaAberta) {
+      alert('O estabelecimento está temporariamente fechado para novos pedidos. Consulte o cardápio e volte logo!');
+      return;
+    }
+    definirItensParaRepetir(itensPreSelecionados);
+    definirModalCriacaoAberto(true);
+  };
+
   const aoRepetirPedido = (pedido) => {
     if (!pedido) return;
+    if (usuario?.perfil === 'CLIENTE' && !estaLojaAberta) {
+      alert('O estabelecimento está temporariamente fechado para novos pedidos.');
+      return;
+    }
     const isFinalizado = pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO';
     if (!isFinalizado) {
       alert('Apenas pedidos finalizados podem ser repetidos.');
@@ -121,13 +135,12 @@ export default function App() {
       precoUnitario: item.precoUnitario || item.unitPrice || 0,
       observacao: item.observacao || item.observation || ''
     }));
-    definirItensParaRepetir(itens);
-    definirModalCriacaoAberto(true);
+    aoTentarAbrirNovoPedido(itens);
   };
 
   const aoPedirItemDireto = (produto) => {
     if (!produto) return;
-    if (configuracao && !configuracao.operacionalmenteAbertaHoje) {
+    if (usuario?.perfil === 'CLIENTE' && !estaLojaAberta) {
       alert('O estabelecimento está temporariamente fechado para novos pedidos.');
       return;
     }
@@ -138,8 +151,7 @@ export default function App() {
       precoUnitario: produto.preco,
       observacao: ''
     }];
-    definirItensParaRepetir(item);
-    definirModalCriacaoAberto(true);
+    aoTentarAbrirNovoPedido(item);
   };
 
   useEffect(() => {
@@ -152,6 +164,7 @@ export default function App() {
   useEffect(() => {
     if (!estaAutenticado) return;
     const intervalo = setInterval(() => {
+      carregarConfiguracao();
       if (abaAtiva === 'PEDIDOS' || abaAtiva === 'HISTORICO') {
         carregarPedidos(true);
       }
@@ -268,13 +281,11 @@ export default function App() {
         usuario={usuario}
         configuracao={configuracao}
         aoSair={() => definirModalLogoutAberto(true)}
-        aoAbrirNovoPedido={() => {
-          definirItensParaRepetir(null);
-          definirModalCriacaoAberto(true);
-        }}
+        aoAbrirNovoPedido={() => aoTentarAbrirNovoPedido(null)}
         tema={tema}
         aoAlternarTema={aoAlternarTema}
         modalPerfilAberto={modalPerfilAberto}
+        aoAbrirPerfil={() => definirModalPerfilAberto(true)}
         aoFecharPerfil={() => definirModalPerfilAberto(false)}
       />
 
@@ -303,7 +314,7 @@ export default function App() {
                 <OrderStats pedidos={pedidos} />
 
                 {/* Barra de Filtro e Busca */}
-                <div style={{
+                <div className="filter-bar-container" style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -379,12 +390,19 @@ export default function App() {
 
                     {usuario?.perfil === 'CLIENTE' && (
                       <button
-                        onClick={() => {
-                          definirItensParaRepetir(null);
-                          definirModalCriacaoAberto(true);
-                        }}
+                        onClick={() => aoTentarAbrirNovoPedido(null)}
+                        disabled={!estaLojaAberta}
                         className="btn-primary"
-                        style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                        style={{
+                          padding: '10px 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          opacity: !estaLojaAberta ? 0.5 : 1,
+                          cursor: !estaLojaAberta ? 'not-allowed' : 'pointer',
+                          filter: !estaLojaAberta ? 'grayscale(0.6)' : 'none'
+                        }}
+                        title={!estaLojaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer novo pedido'}
                       >
                         <Plus size={18} /> Fazer Novo Pedido
                       </button>
@@ -438,14 +456,23 @@ export default function App() {
                         : 'Crie seu primeiro pedido para visualizar no painel!'}
                     </p>
                     {!termoBusca && filtroStatus === 'ALL' && (
-                      <button onClick={() => { definirItensParaRepetir(null); definirModalCriacaoAberto(true); }} className="btn-primary">
+                      <button
+                        onClick={() => aoTentarAbrirNovoPedido(null)}
+                        disabled={!estaLojaAberta}
+                        className="btn-primary"
+                        style={{
+                          opacity: !estaLojaAberta ? 0.5 : 1,
+                          cursor: !estaLojaAberta ? 'not-allowed' : 'pointer'
+                        }}
+                        title={!estaLojaAberta ? 'Estabelecimento fechado para novos pedidos' : 'Criar Primeiro Pedido'}
+                      >
                         <Plus size={18} /> Criar Primeiro Pedido
                       </button>
                     )}
                   </div>
                 ) : (
                   <>
-                    <div style={{
+                    <div className="orders-grid" style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
                       gap: '20px'
@@ -489,13 +516,23 @@ export default function App() {
                       Consulte seus pedidos anteriores, comprovantes e acompanhe suas solicitações já finalizadas.
                     </p>
                   </div>
-                  <button onClick={() => { definirItensParaRepetir(null); definirModalCriacaoAberto(true); }} className="btn-primary">
+                  <button
+                    onClick={() => aoTentarAbrirNovoPedido(null)}
+                    disabled={!estaLojaAberta}
+                    className="btn-primary"
+                    style={{
+                      opacity: !estaLojaAberta ? 0.5 : 1,
+                      cursor: !estaLojaAberta ? 'not-allowed' : 'pointer',
+                      filter: !estaLojaAberta ? 'grayscale(0.6)' : 'none'
+                    }}
+                    title={!estaLojaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer novo pedido'}
+                  >
                     <Plus size={18} /> Fazer Novo Pedido
                   </button>
                 </div>
 
                 {/* Barra de Filtro e Busca no Histórico */}
-                <div style={{
+                <div className="filter-bar-container" style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px',
                   flexWrap: 'wrap', marginBottom: '24px', backgroundColor: 'var(--bg-card)',
                   padding: '16px 20px', borderRadius: '16px', border: '1px solid var(--border-color)'
@@ -540,18 +577,28 @@ export default function App() {
                     <History size={48} color="var(--text-secondary)" style={{ marginBottom: '16px', opacity: 0.4 }} />
                     <h3 style={{ color: 'var(--text-main)', fontSize: '1.2rem', marginBottom: '8px' }}>Nenhum pedido no histórico</h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '20px' }}>Você ainda não realizou pedidos no sistema.</p>
-                    <button onClick={() => { definirItensParaRepetir(null); definirModalCriacaoAberto(true); }} className="btn-primary">
+                    <button
+                      onClick={() => aoTentarAbrirNovoPedido(null)}
+                      disabled={!estaLojaAberta}
+                      className="btn-primary"
+                      style={{
+                        opacity: !estaLojaAberta ? 0.5 : 1,
+                        cursor: !estaLojaAberta ? 'not-allowed' : 'pointer'
+                      }}
+                      title={!estaLojaAberta ? 'Estabelecimento fechado para novos pedidos' : 'Fazer Primeiro Pedido'}
+                    >
                       <Plus size={18} /> Fazer Primeiro Pedido
                     </button>
                   </div>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                    <div className="orders-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                       {pedidosFiltrados.map((pedido) => (
                         <OrderCard
                           key={pedido.id}
                           pedido={pedido}
                           usuario={usuario}
+                          configuracao={configuracao}
                           aoClicarCard={aoSelecionarPedido}
                           aoAtualizarStatus={aoAtualizarStatus}
                           aoCancelarPedido={aoAbrirCancelamento}
@@ -587,10 +634,7 @@ export default function App() {
               <CardapioView
                 usuario={usuario}
                 configuracao={configuracao}
-                aoFazerPedido={() => {
-                  definirItensParaRepetir(null);
-                  definirModalCriacaoAberto(true);
-                }}
+                aoFazerPedido={() => aoTentarAbrirNovoPedido(null)}
                 aoPedirItem={aoPedirItemDireto}
               />
             )}
@@ -657,23 +701,6 @@ export default function App() {
         <LogoutModal
           aoFechar={() => definirModalLogoutAberto(false)}
           aoConfirmarSair={aoConfirmarSair}
-        />
-      )}
-
-      {/* Barra de Navegação Inferior Fixa para Mobile */}
-      {estaAutenticado && (
-        <BottomNav
-          usuario={usuario}
-          abaAtiva={abaAtiva}
-          definirAbaAtiva={definirAbaAtiva}
-          aoAbrirNovoPedido={() => {
-            definirItensParaRepetir(null);
-            definirModalCriacaoAberto(true);
-          }}
-          aoAbrirPerfil={() => definirModalPerfilAberto(true)}
-          aoSair={() => definirModalLogoutAberto(true)}
-          tema={tema}
-          aoAlternarTema={aoAlternarTema}
         />
       )}
     </div>

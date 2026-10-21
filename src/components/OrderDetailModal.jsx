@@ -21,6 +21,7 @@ export function OrderDetailModal({ pedido, usuario, configuracao, aoFechar, aoAt
   const [avaliacaoLocal, setAvaliacaoLocal] = useState(pedido.avaliacao || null);
 
   const perfil = usuario?.perfil || 'CLIENTE';
+  const estaAberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
   const podeAlterar = podeAlterarStatusPedido(pedido, perfil);
   const podeCancelar = podeCancelarPedido(pedido, perfil);
   const opcoesProximas = obterOpcoesStatusProximos(pedido.status, perfil);
@@ -661,18 +662,26 @@ export function OrderDetailModal({ pedido, usuario, configuracao, aoFechar, aoAt
           {perfil === 'CLIENTE' && (pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO') && aoRepetirPedido && (
             <button
               type="button"
+              disabled={!estaAberta}
               onClick={() => {
+                if (!estaAberta) {
+                  alert('O estabelecimento está temporariamente fechado para novos pedidos.');
+                  return;
+                }
                 aoFechar();
                 aoRepetirPedido(pedido);
               }}
               className="btn-primary"
               style={{
-                backgroundColor: 'rgba(211, 1, 1, 0.15)',
-                border: '1px solid var(--primary-accent)',
-                color: "#ffffff",
+                backgroundColor: estaAberta ? 'rgba(211, 1, 1, 0.15)' : 'rgba(150, 150, 150, 0.15)',
+                border: `1px solid ${estaAberta ? 'var(--primary-accent)' : 'var(--border-color)'}`,
+                color: estaAberta ? "#ffffff" : "var(--text-secondary)",
                 padding: '8px 16px',
-                fontSize: '0.85rem'
+                fontSize: '0.85rem',
+                opacity: estaAberta ? 1 : 0.6,
+                cursor: estaAberta ? 'pointer' : 'not-allowed'
               }}
+              title={!estaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer um novo pedido com os mesmos itens deste'}
             >
               <RotateCcw size={16} /> Repetir este Pedido
             </button>

@@ -16,6 +16,7 @@ const CATEGORIAS_CARDAPIO = [
 
 export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuracao, itensPreSelecionados }) {
   const isClientePerfil = usuario?.perfil === 'CLIENTE';
+  const estaAberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
 
   // Passo do Wizard: 1 = Escolha de Itens | 2 = Endereço, Pagamento & Confirmação
   const [passoAtual, setPassoAtual] = useState(itensPreSelecionados && itensPreSelecionados.length > 0 ? 2 : 1);
@@ -210,6 +211,11 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuraca
     e.preventDefault();
     setErro(null);
 
+    if (isClientePerfil && !estaAberta) {
+      setErro('O estabelecimento está fechado para novos pedidos no momento. O expediente foi encerrado ou ainda não foi iniciado.');
+      return;
+    }
+
     if (listaItensSacola.length === 0) {
       setErro('Sua sacola está vazia. Adicione pelo menos 1 item no Passo 1.');
       return;
@@ -367,14 +373,14 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuraca
           </div>
 
           <div
-            onClick={() => { if (listaItensSacola.length > 0) setPassoAtual(2); }}
+            onClick={() => { if (listaItensSacola.length > 0 && (!isClientePerfil || estaAberta)) setPassoAtual(2); }}
             style={{
               padding: '12px 20px',
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              cursor: listaItensSacola.length > 0 ? 'pointer' : 'not-allowed',
-              opacity: listaItensSacola.length > 0 ? 1 : 0.5,
+              cursor: (listaItensSacola.length > 0 && (!isClientePerfil || estaAberta)) ? 'pointer' : 'not-allowed',
+              opacity: (listaItensSacola.length > 0 && (!isClientePerfil || estaAberta)) ? 1 : 0.5,
               borderBottom: passoAtual === 2 ? '3px solid var(--primary-accent)' : '3px solid transparent',
               backgroundColor: passoAtual === 2 ? 'rgba(211, 1, 1, 0.08)' : 'transparent',
               transition: 'all 0.2s ease'
@@ -421,6 +427,31 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuraca
           }}>
             <AlertCircle size={16} />
             {erro}
+          </div>
+        )}
+
+        {/* Banner de Estabelecimento Fechado */}
+        {isClientePerfil && !estaAberta && (
+          <div style={{
+            margin: '16px 24px 0 24px',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            color: '#f87171',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}>
+            <AlertCircle size={20} style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>
+                Estabelecimento Fechado para Novos Pedidos
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                {configuracao?.mensagemFechado || 'Não estamos recebendo novos pedidos no momento. O expediente foi encerrado ou ainda não foi iniciado.'}
+              </div>
+            </div>
           </div>
         )}
 
@@ -482,7 +513,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuraca
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+                <div className="create-order-product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
                   {produtosFiltrados.map(prod => {
                     const itemNaSacola = sacola[prod.id];
                     const quantidadeAtual = itemNaSacola ? itemNaSacola.quantidade : 0;
@@ -1020,9 +1051,10 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuraca
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={listaItensSacola.length === 0}
+                  disabled={listaItensSacola.length === 0 || (isClientePerfil && !estaAberta)}
                   onClick={() => setPassoAtual(2)}
-                  style={{ opacity: listaItensSacola.length === 0 ? 0.5 : 1, cursor: listaItensSacola.length === 0 ? 'not-allowed' : 'pointer' }}
+                  style={{ opacity: (listaItensSacola.length === 0 || (isClientePerfil && !estaAberta)) ? 0.5 : 1, cursor: (listaItensSacola.length === 0 || (isClientePerfil && !estaAberta)) ? 'not-allowed' : 'pointer' }}
+                  title={isClientePerfil && !estaAberta ? 'Estabelecimento fechado no momento' : 'Avançar para Endereço'}
                 >
                   Avançar para Endereço <ArrowRight size={18} />
                 </button>
@@ -1035,8 +1067,10 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuraca
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={carregando}
+                  disabled={carregando || (isClientePerfil && !estaAberta)}
                   onClick={aoSubmeterFinal}
+                  style={{ opacity: (carregando || (isClientePerfil && !estaAberta)) ? 0.5 : 1, cursor: (carregando || (isClientePerfil && !estaAberta)) ? 'not-allowed' : 'pointer' }}
+                  title={isClientePerfil && !estaAberta ? 'Estabelecimento fechado no momento' : 'Confirmar e Enviar Pedido'}
                 >
                   {carregando ? 'Confirmando...' : '🚀 Confirmar e Enviar Pedido'}
                 </button>

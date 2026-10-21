@@ -219,7 +219,7 @@ export function AdminDashboardView() {
       )}
 
       {/* Cards de KPIs Principais */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+      <div className="dashboard-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         
         {/* KPI 1: Faturamento Total */}
         <div className="glass-panel" style={{ padding: '20px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -310,7 +310,7 @@ export function AdminDashboardView() {
       </div>
 
       {/* Linha 2: Gráfico de Barras de Faturamento Diário & Top Produtos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+      <div className="dashboard-charts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         
         {/* Gráfico de Faturamento por Dia */}
         <div className="glass-panel" style={{ padding: '22px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'hidden' }}>
@@ -418,7 +418,7 @@ export function AdminDashboardView() {
       </div>
 
       {/* Linha 3: Formas de Pagamento & Status */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      <div className="dashboard-distribution-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
         
         {/* Distribuição por Forma de Pagamento */}
         <div className="glass-panel" style={{ padding: '22px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
