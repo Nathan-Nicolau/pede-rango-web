@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Utensils, Flame, LogOut, Plus, User, Sun, Moon, ShieldCheck, Truck, X, Mail, CheckCircle, Phone, MapPin, Save, AlertCircle, Edit2 } from 'lucide-react';
+import { Utensils, LogOut, Plus, User, Sun, Moon, ShieldCheck, Truck, X, Mail, CheckCircle, Phone, MapPin, Save, AlertCircle, Edit2 } from 'lucide-react';
 import { labelPerfil } from '../utils/statusLabels';
 import { servicoClientes, servicoEntregadores } from '../services/api';
 
-export function Navbar({ 
-  usuario, 
-  aoSair, 
-  aoAbrirNovoPedido, 
-  tema, 
-  aoAlternarTema,
-  modalPerfilAberto: modalPerfilExterno,
-  aoFecharPerfil: aoFecharPerfilExterno,
-  aoAbrirPerfil: aoAbrirPerfilExterno
-}) {
-  const [modalPerfilInterno, setModalPerfilInterno] = useState(false);
-  const modalPerfilAberto = modalPerfilExterno !== undefined ? modalPerfilExterno : modalPerfilInterno;
-  const setModalPerfilAberto = (valor) => {
-    if (modalPerfilExterno !== undefined) {
-      if (valor && aoAbrirPerfilExterno) aoAbrirPerfilExterno();
-      else if (!valor && aoFecharPerfilExterno) aoFecharPerfilExterno();
+export function Navbar({ usuario, aoSair, aoAbrirNovoPedido, tema, aoAlternarTema, configuracao, modalPerfilAberto: modalPerfilExterno, aoAbrirPerfil, aoFecharPerfil }) {
+  const [modalPerfilLocal, setModalPerfilLocal] = useState(false);
+  const isControlled = modalPerfilExterno !== undefined;
+  const modalPerfilAberto = isControlled ? modalPerfilExterno : modalPerfilLocal;
+  const setModalPerfilAberto = (val) => {
+    if (!isControlled) {
+      setModalPerfilLocal(val);
+    }
+    if (val) {
+      if (aoAbrirPerfil) aoAbrirPerfil();
     } else {
-      setModalPerfilInterno(valor);
+      if (aoFecharPerfil) aoFecharPerfil();
     }
   };
   const nomeExibicao = usuario?.nome || usuario?.name || usuario?.email || 'Usuário';
@@ -39,12 +33,15 @@ export function Navbar({
   // Configuração por perfil
   const perfisConfig = {
     ADMIN: { color: '#D30101', bg: 'rgba(211, 1, 1, 0.15)', border: 'rgba(211, 1, 1, 0.3)', icon: ShieldCheck },
+    RESTAURANTE: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', icon: Utensils },
     ENTREGADOR: { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.3)', icon: Truck },
     CLIENTE: { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)', icon: User },
   };
 
   const cfg = perfisConfig[perfil] || perfisConfig.CLIENTE;
   const IconePerfil = cfg.icon;
+
+  const estaAberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
 
   // Carrega dados do perfil ao abrir o modal
   useEffect(() => {
@@ -130,36 +127,82 @@ export function Navbar({
           margin: '0 auto',
           padding: '14px 24px',
           display: 'flex',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           alignItems: 'center',
           width: '100%',
           boxSizing: 'border-box'
         }}>
           {/* Marca (Alinhado à Esquerda) */}
-          <div className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-            <div className="navbar-brand-logo" style={{
-              background: 'linear-gradient(135deg, #D30101 0%, #850000 100%)',
-              padding: '10px',
+          <div className="navbar-brand-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
               borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: tema === 'light' ? '0 4px 14px rgba(211, 1, 1, 0.15)' : '0 4px 14px rgba(211, 1, 1, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(211, 1, 1, 0.4)'
+              backgroundColor: tema === 'light' ? '#ffffff' : '#121216',
+              border: tema === 'light' ? '1px solid rgba(211, 1, 1, 0.2)' : '1px solid rgba(211, 1, 1, 0.3)',
+              transition: 'all 0.3s ease'
             }}>
-              <Flame color="#ffffff" size={22} />
+              <img
+                src={tema === 'light' ? '/assets/logo-pede-rango-light.png' : '/assets/logo-pede-rango.png'}
+                alt="Pede Rango Delivery"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
             <div>
-              <h1 className="navbar-brand-title" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
-                Pede <span style={{ color: 'var(--primary-accent)' }}>Rango</span>
-              </h1>
-              <p className="navbar-brand-subtitle" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>Sabor & Entrega Rápida</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h1 className="navbar-brand-title" style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, letterSpacing: '-0.5px' }}>
+                  Pede Rango <span style={{ color: 'var(--primary-accent)', fontSize: '0.85rem', fontWeight: 600 }}>WEB</span>
+                </h1>
+                {configuracao && (
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    backgroundColor: estaAberta ? 'rgba(16, 185, 129, 0.15)' : 'rgba(211, 1, 1, 0.15)',
+                    color: estaAberta ? '#10b981' : '#f87171',
+                    border: `1px solid ${estaAberta ? 'rgba(16, 185, 129, 0.35)' : 'rgba(211, 1, 1, 0.35)'}`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: estaAberta ? '#10b981' : '#f87171' }} />
+                    {estaAberta ? 'Aberto' : 'Fechado'}
+                  </span>
+                )}
+              </div>
+              <p className="navbar-brand-subtitle" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+                {estaAberta && configuracao?.tempoEstimadoMinMinutos
+                  ? `Entrega: ${configuracao.tempoEstimadoMinMinutos}-${configuracao.tempoEstimadoMaxMinutos} min • Taxa R$ ${Number(configuracao.taxaEntregaPadrao || 0).toFixed(2)}`
+                  : 'Gestão e Operações de Delivery'}
+              </p>
             </div>
           </div>
 
           {/* Controles de Ação (Alinhado à Direita) */}
-          <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '14px', marginLeft: 'auto' }}>
-            {usuario && (perfil === 'ADMIN' || perfil === 'CLIENTE') && (
-              <button onClick={aoAbrirNovoPedido} className="btn-primary header-novo-pedido-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+          <div className="navbar-actions-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto' }}>
+            {usuario && perfil === 'CLIENTE' && (
+              <button
+                onClick={() => {
+                  if (!estaAberta) return;
+                  aoAbrirNovoPedido && aoAbrirNovoPedido();
+                }}
+                disabled={!estaAberta}
+                className="btn-primary"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.85rem',
+                  opacity: !estaAberta ? 0.5 : 1,
+                  cursor: !estaAberta ? 'not-allowed' : 'pointer',
+                  filter: !estaAberta ? 'grayscale(0.6)' : 'none'
+                }}
+                title={!estaAberta ? 'Estabelecimento fechado para novos pedidos no momento' : 'Fazer novo pedido'}
+              >
                 <Plus size={16} /> Novo Pedido
               </button>
             )}
@@ -168,7 +211,7 @@ export function Navbar({
             <button
               type="button"
               onClick={aoAlternarTema}
-              className="header-theme-toggle-btn"
+              className="navbar-theme-btn"
               title={tema === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
               style={{
                 background: 'var(--bg-card)',
@@ -191,27 +234,28 @@ export function Navbar({
               {tema === 'dark' ? (
                 <>
                   <Sun size={17} color="#f59e0b" />
-                  <span className="theme-btn-text">Claro</span>
+                  <span className="navbar-btn-text">Claro</span>
                 </>
               ) : (
                 <>
                   <Moon size={17} color="#a855f7" />
-                  <span className="theme-btn-text">Escuro</span>
+                  <span className="navbar-btn-text">Escuro</span>
                 </>
               )}
             </button>
 
             {/* Card / Perfil do Usuário Logado */}
             {usuario && (
-              <div className="header-user-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '12px', borderLeft: '1px solid var(--border-color)' }}>
+              <div className="navbar-user-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '8px', borderLeft: '1px solid var(--border-color)' }}>
                 <div
-                  className="header-user-profile"
                   onClick={() => setModalPerfilAberto(true)}
+                  className="navbar-user-btn"
+                  title={`Perfil: ${nomeExibicao} (${labelPerfil(perfil)})`}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    padding: '6px 12px',
+                    padding: '6px 10px',
                     borderRadius: '12px',
                     backgroundColor: 'var(--bg-card)',
                     border: `1px solid ${cfg.border}`,
@@ -222,8 +266,8 @@ export function Navbar({
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--bg-card)'}
                 >
                   <div style={{
-                    width: '34px',
-                    height: '34px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '10px',
                     backgroundColor: cfg.bg,
                     border: `1px solid ${cfg.border}`,
@@ -233,16 +277,16 @@ export function Navbar({
                     color: cfg.color,
                     flexShrink: 0
                   }}>
-                    <IconePerfil size={18} />
+                    <IconePerfil size={17} />
                   </div>
-                  <div className="header-user-info" style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <div className="navbar-user-info" style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>
                         {nomeExibicao}
                       </span>
                     </div>
                     <span style={{
-                      fontSize: '0.72rem',
+                      fontSize: '0.7rem',
                       fontWeight: 600,
                       color: cfg.color,
                       display: 'inline-block'
@@ -254,8 +298,8 @@ export function Navbar({
 
                 {/* Botão de Sair Direct */}
                 <button
-                  className="header-logout-btn"
                   onClick={aoSair}
+                  className="navbar-logout-btn"
                   title="Sair da conta"
                   style={{
                     background: 'transparent',

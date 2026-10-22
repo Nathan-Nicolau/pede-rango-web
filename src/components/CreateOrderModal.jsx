@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { servicoPedidos, servicoClientes, servicoProdutos } from '../services/api';
 import { PaginationControls } from './PaginationControls';
-import { X, Plus, Minus, Trash2, ShoppingBag, MapPin, User, AlertCircle, Search, ArrowRight, ArrowLeft, CheckCircle2, Tag, UtensilsCrossed } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, MapPin, User, AlertCircle, Search, ArrowRight, ArrowLeft, CheckCircle2, Tag, UtensilsCrossed, Banknote, CreditCard, QrCode, Copy, Check, Clock } from 'lucide-react';
+import { calcularJanelaEntrega } from '../utils/tempoEstimado';
 
 const CATEGORIAS_CARDAPIO = [
   { id: 'ALL', label: 'Todas as Categorias' },
@@ -13,11 +14,12 @@ const CATEGORIAS_CARDAPIO = [
   { id: 'Sobremesas', label: '🍰 Sobremesas' },
 ];
 
-export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
+export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario, configuracao, itensPreSelecionados }) {
   const isClientePerfil = usuario?.perfil === 'CLIENTE';
+  const estaAberta = Boolean(configuracao?.operacionalmenteAbertaHoje);
 
-  // Passo do Wizard: 1 = Escolha de Itens | 2 = Endereço & Confirmação
-  const [passoAtual, setPassoAtual] = useState(1);
+  // Passo do Wizard: 1 = Escolha de Itens | 2 = Endereço, Pagamento & Confirmação
+  const [passoAtual, setPassoAtual] = useState(itensPreSelecionados && itensPreSelecionados.length > 0 ? 2 : 1);
 
   // Estados do Cliente & Entrega
   const [modoCliente, setModoCliente] = useState(isClientePerfil ? 'MANUAL' : 'CADASTRADO');
@@ -25,6 +27,11 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
   const [nomeCliente, setNomeCliente] = useState(isClientePerfil ? (usuario?.nome || usuario?.email || '') : '');
   const [enderecoEntrega, setEnderecoEntrega] = useState('');
   const [buscaCliente, setBuscaCliente] = useState('');
+
+  // Estados de Forma de Pagamento & Troco
+  const [formaPagamento, setFormaPagamento] = useState('DINHEIRO');
+  const [precisaTroco, setPrecisaTroco] = useState(false);
+  const [trocoPara, setTrocoPara] = useState('');
 
   // Estados de Dados (Produtos & Clientes)
   const [clientes, setClientes] = useState([]);
@@ -40,8 +47,24 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
   const [totalPaginasProdutos, setTotalPaginasProdutos] = useState(1);
   const [totalElementosProdutos, setTotalElementosProdutos] = useState(0);
 
-  // Sacola de Compras: Mapa de idProduto -> { produto, quantidade }
-  const [sacola, setSacola] = useState({});
+  // Sacola de Compras: Mapa de idProduto -> { produtoId, nome, precoUnitario, quantidade, observacao }
+  const [sacola, setSacola] = useState(() => {
+    if (itensPreSelecionados && Array.isArray(itensPreSelecionados) && itensPreSelecionados.length > 0) {
+      const inicial = {};
+      itensPreSelecionados.forEach((item, idx) => {
+        const id = (item.produtoId || item.id || `pre-${idx}`).toString();
+        inicial[id] = {
+          produtoId: item.produtoId || item.id || null,
+          nome: item.nome,
+          precoUnitario: Number(item.precoUnitario || item.preco || 0),
+          quantidade: Number(item.quantidade || 1),
+          observacao: item.observacao || ''
+        };
+      });
+      return inicial;
+    }
+    return {};
+  });
 
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -98,9 +121,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
     setCarregandoProdutos(true);
     try {
       const resp = await servicoProdutos.obterTodosPaginado(paginaProdutos, tamanhoProdutos, categoriaSelecionada);
-      const lista = Array.isArray(resp.content)
-        ? resp.content.filter(p => p.ativo !== false)
-        : [];
+      const lista = Array.isArray(resp.content) ? resp.content : [];
       setProdutos(lista);
       setTotalPaginasProdutos(resp.totalPages || 1);
       setTotalElementosProdutos(resp.totalElements || 0);
@@ -119,20 +140,45 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
       if (qtd <= 0) {
         delete cop[produto.id];
       } else {
+        const itemExistente = cop[produto.id];
         cop[produto.id] = {
           produtoId: produto.id,
           nome: produto.nome,
           precoUnitario: produto.preco,
-          quantidade: qtd
+          quantidade: qtd,
+          observacao: itemExistente ? itemExistente.observacao : ''
         };
       }
       return cop;
     });
   };
 
+  const alterarObservacaoProduto = (produtoId, observacao) => {
+    setSacola(prev => {
+      if (!prev[produtoId]) return prev;
+      return {
+        ...prev,
+        [produtoId]: {
+          ...prev[produtoId],
+          observacao
+        }
+      };
+    });
+  };
+
   const listaItensSacola = Object.values(sacola);
   const totalItensSacola = listaItensSacola.reduce((acc, item) => acc + item.quantidade, 0);
-  const valorTotalSacola = listaItensSacola.reduce((acc, item) => acc + (item.quantidade * item.precoUnitario), 0).toFixed(2);
+  const subtotalSacola = listaItensSacola.reduce((acc, item) => acc + (item.quantidade * item.precoUnitario), 0);
+  const taxaEntrega = Number(configuracao?.taxaEntregaPadrao ?? 0);
+  const valorTotalSacola = (subtotalSacola + taxaEntrega).toFixed(2);
+  const chavePixEstabelecimento = configuracao?.chavePix || 'pederango@pix.com.br';
+  const [copiouPix, setCopiouPix] = useState(false);
+
+  const copiarPix = () => {
+    navigator.clipboard.writeText(chavePixEstabelecimento);
+    setCopiouPix(true);
+    setTimeout(() => setCopiouPix(false), 2000);
+  };
 
   // Filtro do Cardápio no Passo 1
   const produtosFiltrados = produtos.filter(p => {
@@ -165,6 +211,11 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
     e.preventDefault();
     setErro(null);
 
+    if (isClientePerfil && !estaAberta) {
+      setErro('O estabelecimento está fechado para novos pedidos no momento. O expediente foi encerrado ou ainda não foi iniciado.');
+      return;
+    }
+
     if (listaItensSacola.length === 0) {
       setErro('Sua sacola está vazia. Adicione pelo menos 1 item no Passo 1.');
       return;
@@ -180,17 +231,29 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
       return;
     }
 
+    if (formaPagamento === 'DINHEIRO' && precisaTroco) {
+      const trocoNum = parseFloat(trocoPara);
+      const totalNum = parseFloat(valorTotalSacola);
+      if (isNaN(trocoNum) || trocoNum < totalNum) {
+        setErro(`O valor para troco (R$ ${isNaN(trocoNum) ? '0,00' : trocoNum.toFixed(2)}) deve ser maior ou igual ao valor total do pedido com taxa (R$ ${totalNum.toFixed(2)}).`);
+        return;
+      }
+    }
+
     setCarregando(true);
     try {
       const payload = {
         clienteId: clienteSelecionado ? clienteSelecionado.id : null,
         nomeCliente: modoCliente === 'MANUAL' ? nomeCliente : (clienteSelecionado?.nome || nomeCliente),
         enderecoEntrega: enderecoEntrega.trim(),
+        formaPagamento: formaPagamento,
+        trocoPara: (formaPagamento === 'DINHEIRO' && precisaTroco && trocoPara) ? parseFloat(trocoPara) : null,
         itens: listaItensSacola.map(item => ({
           produtoId: item.produtoId,
           nome: item.nome,
           quantidade: item.quantidade,
-          precoUnitario: parseFloat(item.precoUnitario)
+          precoUnitario: parseFloat(item.precoUnitario),
+          observacao: item.observacao && item.observacao.trim() ? item.observacao.trim() : null
         }))
       };
 
@@ -206,20 +269,18 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
 
   return (
     <div className="modal-overlay" style={{ padding: '16px' }}>
-      <div className="modal-content modal-content-xl create-order-modal-dialog" style={{ maxWidth: '920px', padding: 0, overflow: 'hidden', borderRadius: '20px', display: 'flex', flexDirection: 'column' }}>
+      <div className="modal-content modal-content-xl" style={{ maxWidth: '920px', padding: 0, overflow: 'hidden', borderRadius: '20px' }}>
         
         {/* Cabeçalho do Wizard com Alinhamento em Extremidades Opostas */}
-        <div className="create-order-modal-header" style={{
-          padding: '18px 24px',
+        <div style={{
+          padding: '20px 24px',
           backgroundColor: 'var(--bg-card)',
           borderBottom: '1px solid var(--border-color)',
           display: 'flex',
-          justifyContent: 'space-between',
+          justify: 'space-between',
           alignItems: 'center',
           width: '100%',
-          boxSizing: 'border-box',
-          gap: '16px',
-          flexShrink: 0
+          gap: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
             <div style={{
@@ -268,12 +329,11 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
         </div>
 
         {/* Stepper Visual de Passos */}
-        <div className="create-order-wizard-tabs" style={{
+        <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           backgroundColor: 'var(--bg-input)',
-          borderBottom: '1px solid var(--border-color)',
-          flexShrink: 0
+          borderBottom: '1px solid var(--border-color)'
         }}>
           <div
             onClick={() => setPassoAtual(1)}
@@ -313,14 +373,14 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
           </div>
 
           <div
-            onClick={() => { if (listaItensSacola.length > 0) setPassoAtual(2); }}
+            onClick={() => { if (listaItensSacola.length > 0 && (!isClientePerfil || estaAberta)) setPassoAtual(2); }}
             style={{
               padding: '12px 20px',
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              cursor: listaItensSacola.length > 0 ? 'pointer' : 'not-allowed',
-              opacity: listaItensSacola.length > 0 ? 1 : 0.5,
+              cursor: (listaItensSacola.length > 0 && (!isClientePerfil || estaAberta)) ? 'pointer' : 'not-allowed',
+              opacity: (listaItensSacola.length > 0 && (!isClientePerfil || estaAberta)) ? 1 : 0.5,
               borderBottom: passoAtual === 2 ? '3px solid var(--primary-accent)' : '3px solid transparent',
               backgroundColor: passoAtual === 2 ? 'rgba(211, 1, 1, 0.08)' : 'transparent',
               transition: 'all 0.2s ease'
@@ -370,35 +430,59 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
           </div>
         )}
 
+        {/* Banner de Estabelecimento Fechado */}
+        {isClientePerfil && !estaAberta && (
+          <div style={{
+            margin: '16px 24px 0 24px',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+            color: '#f87171',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}>
+            <AlertCircle size={20} style={{ flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>
+                Estabelecimento Fechado para Novos Pedidos
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                {configuracao?.mensagemFechado || 'Não estamos recebendo novos pedidos no momento. O expediente foi encerrado ou ainda não foi iniciado.'}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* =========================================================================
             PASSO 1: CARDÁPIO INTERATIVO & SELEÇÃO DE ITENS
             ========================================================================= */}
         {passoAtual === 1 && (
-          <div className="create-order-step-content" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '16px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
+          <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '18px', maxHeight: '65vh', overflowY: 'auto' }}>
             
             {/* Barra de Filtro por Categoria e Busca */}
-            <div className="create-order-filter-bar" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div className="search-input-wrapper" style={{ position: 'relative', flex: '1 1 240px', width: '100%' }}>
-                <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }} />
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ position: 'relative', flex: '1 1 240px' }}>
+                <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
-                  className="search-input-with-icon form-input"
+                  className="form-input"
                   placeholder="Buscar produto no cardápio..."
                   value={buscaProduto}
                   onChange={(e) => setBuscaProduto(e.target.value)}
-                  style={{ paddingLeft: '42px', width: '100%' }}
+                  style={{ paddingLeft: '38px', width: '100%' }}
                 />
               </div>
 
-              <div className="create-order-categories" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%' }}>
                 {CATEGORIAS_CARDAPIO.map(cat => (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => { setCategoriaSelecionada(cat.id); setPaginaProdutos(0); }}
-                    className="category-pill-btn"
                     style={{
-                      padding: '7px 14px',
+                      padding: '8px 14px',
                       borderRadius: '999px',
                       fontSize: '0.8rem',
                       fontWeight: 600,
@@ -407,8 +491,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                       border: categoriaSelecionada === cat.id ? '1px solid var(--primary-accent)' : '1px solid var(--border-color)',
                       backgroundColor: categoriaSelecionada === cat.id ? 'rgba(211, 1, 1, 0.18)' : 'var(--bg-card)',
                       color: categoriaSelecionada === cat.id ? 'var(--primary-accent)' : 'var(--text-secondary)',
-                      transition: 'all 0.2s ease',
-                      flexShrink: 0
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     {cat.label}
@@ -430,59 +513,75 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '14px' }}>
+                <div className="create-order-product-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
                   {produtosFiltrados.map(prod => {
                     const itemNaSacola = sacola[prod.id];
                     const quantidadeAtual = itemNaSacola ? itemNaSacola.quantidade : 0;
+                    const isAtivo = prod.ativo !== false;
 
                     return (
                       <div
                         key={prod.id}
-                        className="glass-panel create-order-product-card"
+                        className="glass-panel"
                         style={{
-                          padding: '14px 16px',
+                          padding: '16px',
                           borderRadius: '14px',
                           border: quantidadeAtual > 0 ? '1px solid var(--primary-accent)' : '1px solid var(--border-color)',
                           display: 'flex',
                           flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '10px',
-                          backgroundColor: quantidadeAtual > 0 ? 'rgba(211, 1, 1, 0.04)' : 'var(--bg-card)',
+                          justify: 'space-between',
+                          gap: '12px',
+                          opacity: isAtivo ? 1 : 0.6,
+                          backgroundColor: quantidadeAtual > 0 ? 'rgba(211, 1, 1, 0.04)' : isAtivo ? 'var(--bg-card)' : 'rgba(239, 68, 68, 0.04)',
                           transition: 'all 0.2s ease'
                         }}
                       >
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-                            <h4 className="create-order-product-title" style={{ fontSize: '0.94rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                            <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                               {prod.nome}
                             </h4>
                             {prod.categoria && (
-                              <span style={{ fontSize: '0.68rem', backgroundColor: 'var(--bg-input)', padding: '2px 7px', borderRadius: '6px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--bg-input)', padding: '2px 8px', borderRadius: '6px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
                                 {prod.categoria}
                               </span>
                             )}
                           </div>
                           {prod.descricao && (
-                            <p className="create-order-product-desc" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.35' }}>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {prod.descricao}
                             </p>
+                          )}
+                          {!isAtivo && (
+                            <span style={{ display: 'inline-block', marginTop: '6px', fontSize: '0.72rem', color: '#f87171', fontWeight: 700 }}>
+                              ⛔ Esgotado hoje
+                            </span>
                           )}
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-                          <span className="create-order-product-price" style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary-accent)' }}>
+                          <span className="create-order-product-price" style={{ fontSize: '1.05rem', fontWeight: 800, color: isAtivo ? 'var(--primary-accent)' : 'var(--text-secondary)' }}>
                             R$ {Number(prod.preco || 0).toFixed(2)}
                           </span>
 
                           {/* Controles de Quantidade */}
-                          {quantidadeAtual === 0 ? (
+                          {!isAtivo ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="btn-secondary"
+                              style={{ padding: '6px 12px', fontSize: '0.78rem', opacity: 0.6, cursor: 'not-allowed' }}
+                            >
+                              Esgotado
+                            </button>
+                          ) : quantidadeAtual === 0 ? (
                             <button
                               type="button"
                               onClick={() => alterarQuantidadeProduto(prod, 1)}
                               className="btn-primary create-order-product-btn"
-                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
                             >
-                              <Plus size={14} /> Adicionar
+                              <Plus size={15} /> Adicionar
                             </button>
                           ) : (
                             <div style={{
@@ -514,6 +613,20 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                             </div>
                           )}
                         </div>
+
+                        {/* Campo de Observação por Item */}
+                        {quantidadeAtual > 0 && (
+                          <div style={{ marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed var(--border-color)' }}>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Observação (ex: sem cebola, bem passado)..."
+                              value={sacola[prod.id]?.observacao || ''}
+                              onChange={(e) => alterarObservacaoProduto(prod.id, e.target.value)}
+                              style={{ fontSize: '0.76rem', padding: '5px 8px', borderRadius: '6px', width: '100%' }}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -536,19 +649,39 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
         )}
 
         {/* =========================================================================
-            PASSO 2: ENDEREÇO & CONFIRMAÇÃO DO PEDIDO (Dados do Cliente Fixos)
+            PASSO 2: ENDEREÇO, FORMA DE PAGAMENTO & CONFIRMAÇÃO DO PEDIDO
             ========================================================================= */}
         {passoAtual === 2 && (
-          <form onSubmit={aoSubmeterFinal} className="create-order-step-content" style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '18px', flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
+          <form onSubmit={aoSubmeterFinal} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '65vh', overflowY: 'auto' }}>
             
+            {/* Banner de Previsão de Entrega Dinâmica */}
+            <div style={{
+              backgroundColor: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#60a5fa', fontWeight: 600, fontSize: '0.88rem' }}>
+                <Clock size={18} /> Previsão Estimada de Entrega: <strong style={{ color: '#93c5fd' }}>{calcularJanelaEntrega(new Date(), Number(configuracao?.tempoEstimadoMinMinutos || 30), Number(configuracao?.tempoEstimadoMaxMinutos || 45)).janelaHorario}</strong> ({calcularJanelaEntrega(new Date(), Number(configuracao?.tempoEstimadoMinMinutos || 30), Number(configuracao?.tempoEstimadoMaxMinutos || 45)).tempoEstimadoMinutos})
+              </div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                Estimativa calculada em tempo real
+              </span>
+            </div>
+
             {/* Seção de Dados do Cliente e Endereço */}
-            <div style={{ backgroundColor: 'var(--bg-input)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ backgroundColor: 'var(--bg-input)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <MapPin size={18} color="var(--primary-accent)" /> Endereço de Entrega & Cliente
               </h4>
 
               {isClientePerfil ? (
-                <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }} className="auth-form-grid-2col">
                   <div className="form-group">
                     <label>Nome do Cliente (Seu perfil) *</label>
                     <input
@@ -574,28 +707,25 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '10px' }}>
                     <button
                       type="button"
-                      onClick={() => { setModoCliente('CADASTRADO'); aoDeselecionarCliente(); }}
-                      style={{
-                        padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: modoCliente === 'CADASTRADO' ? 'rgba(211,1,1,0.15)' : 'transparent',
-                        color: modoCliente === 'CADASTRADO' ? 'var(--primary-accent)' : 'var(--text-secondary)',
-                      }}>
-                      <User size={13} style={{ display: 'inline', marginRight: '4px' }} /> Selecionar Cliente Cadastrado
+                      className={modoCliente === 'CADASTRADO' ? 'btn-primary' : 'btn-secondary'}
+                      onClick={() => setModoCliente('CADASTRADO')}
+                      style={{ flex: 1, padding: '8px 12px', fontSize: '0.85rem' }}
+                    >
+                      Selecionar Cliente Cadastrado
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setModoCliente('MANUAL'); aoDeselecionarCliente(); }}
-                      style={{
-                        padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: modoCliente === 'MANUAL' ? 'rgba(211,1,1,0.15)' : 'transparent',
-                        color: modoCliente === 'MANUAL' ? 'var(--primary-accent)' : 'var(--text-secondary)',
-                      }}>
-                      ✍️ Digitar Manualmente
+                      className={modoCliente === 'MANUAL' ? 'btn-primary' : 'btn-secondary'}
+                      onClick={() => {
+                        setModoCliente('MANUAL');
+                        aoDeselecionarCliente();
+                      }}
+                      style={{ flex: 1, padding: '8px 12px', fontSize: '0.85rem' }}
+                    >
+                      Digitar Manualmente
                     </button>
                   </div>
 
@@ -603,25 +733,30 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                     <div>
                       {clienteSelecionado ? (
                         <div style={{
-                          backgroundColor: 'var(--bg-card)', padding: '12px', borderRadius: '10px',
-                          border: '1px solid rgba(211,1,1,0.4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '10px 14px', backgroundColor: 'var(--bg-card)', borderRadius: '10px',
+                          border: '1px solid var(--primary-accent)'
                         }}>
                           <div>
-                            <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{clienteSelecionado.nome}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{clienteSelecionado.email} — {clienteSelecionado.telefone}</div>
+                            <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                              {clienteSelecionado.nome}
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                              {clienteSelecionado.email} • Tel: {clienteSelecionado.telefone || 'N/A'}
+                            </div>
                           </div>
-                          <button type="button" onClick={aoDeselecionarCliente} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.78rem' }}>
+                          <button type="button" onClick={aoDeselecionarCliente} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '0.75rem' }}>
                             Trocar
                           </button>
                         </div>
                       ) : (
                         <div style={{ position: 'relative' }}>
-                          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
                           <input
-                            type="text" className="search-input-with-icon form-input"
+                            type="text" className="form-input"
                             placeholder="Buscar cliente por nome ou e-mail..."
                             value={buscaCliente} onChange={e => setBuscaCliente(e.target.value)}
-                            style={{ paddingLeft: '40px', width: '100%' }}
+                            style={{ paddingLeft: '38px', width: '100%' }}
                           />
                           {buscaCliente && (
                             <div style={{
@@ -647,7 +782,7 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                       </div>
                     </div>
                   ) : (
-                    <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }} className="auth-form-grid-2col">
                       <div className="form-group">
                         <label>Nome do Cliente *</label>
                         <input type="text" className="form-input" placeholder="Ex: João da Silva"
@@ -664,14 +799,171 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
               )}
             </div>
 
-            {/* Resumo da Tabela de Itens */}
-            <div className="order-summary-items-section">
+            {/* Seção de Forma de Pagamento */}
+            <div style={{ backgroundColor: 'var(--bg-input)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Banknote size={18} color="var(--primary-accent)" /> Forma de Pagamento (na entrega)
+              </h4>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+                {[
+                  { id: 'DINHEIRO', label: 'Dinheiro', icon: Banknote, desc: 'Pagar em dinheiro' },
+                  { id: 'PIX', label: 'PIX', icon: QrCode, desc: 'PIX na entrega' },
+                  { id: 'CARTAO_CREDITO', label: 'Crédito', icon: CreditCard, desc: 'Maquininha' },
+                  { id: 'CARTAO_DEBITO', label: 'Débito', icon: CreditCard, desc: 'Maquininha' },
+                ].map(m => {
+                  const Icon = m.icon;
+                  const selecionado = formaPagamento === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setFormaPagamento(m.id)}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '12px 8px',
+                        borderRadius: '12px',
+                        border: selecionado ? '2px solid var(--primary-accent)' : '1px solid var(--border-color)',
+                        backgroundColor: selecionado ? 'rgba(211, 1, 1, 0.12)' : 'var(--bg-card)',
+                        color: selecionado ? 'var(--primary-accent)' : 'var(--text-main)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Icon size={20} color={selecionado ? 'var(--primary-accent)' : 'var(--text-secondary)'} />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{m.label}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{m.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Se for PIX, exibir Chave PIX da Loja */}
+              {formaPagamento === 'PIX' && (
+                <div style={{
+                  backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                  padding: '14px 18px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(6, 182, 212, 0.3)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#06b6d4', fontWeight: 700, fontSize: '0.9rem' }}>
+                    <QrCode size={18} /> Chave PIX do Estabelecimento
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Realize a transferência no ato da entrega ou envie o comprovante ao entregador:
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: 'var(--bg-card)',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    gap: '10px'
+                  }}>
+                    <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                      {chavePixEstabelecimento}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={copiarPix}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        backgroundColor: copiouPix ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-input)',
+                        border: `1px solid ${copiouPix ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-color)'}`,
+                        color: copiouPix ? '#34d399' : 'var(--text-main)',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        flexShrink: 0
+                      }}
+                    >
+                      {copiouPix ? <><Check size={14} /> Copiado!</> : <><Copy size={14} /> Copiar Chave</>}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Se for Dinheiro, opção de Troco */}
+              {formaPagamento === 'DINHEIRO' && (
+                <div style={{
+                  backgroundColor: 'var(--bg-card)',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                    <input
+                      type="checkbox"
+                      checked={precisaTroco}
+                      onChange={(e) => {
+                        setPrecisaTroco(e.target.checked);
+                        if (!e.target.checked) setTrocoPara('');
+                      }}
+                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary-accent)' }}
+                    />
+                    Precisa de troco?
+                  </label>
+
+                  {precisaTroco && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ flex: '1 1 180px' }}>
+                        <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                          Troco para quanto? (R$)
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder={`Ex: ${(Math.ceil(parseFloat(valorTotalSacola) / 10) * 10).toFixed(2)}`}
+                          value={trocoPara}
+                          onChange={(e) => setTrocoPara(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1'))}
+                          className="form-input"
+                          style={{ width: '100%', padding: '8px 12px', fontSize: '0.9rem' }}
+                          required={precisaTroco}
+                        />
+                      </div>
+
+                      {trocoPara && parseFloat(trocoPara) >= parseFloat(valorTotalSacola) && (
+                        <div style={{
+                          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          color: '#34d399',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700
+                        }}>
+                          Troco a devolver: R$ {(parseFloat(trocoPara) - parseFloat(valorTotalSacola)).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Resumo da Tabela de Itens e Discriminação Financeira */}
+            <div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '10px' }}>
                 Resumo dos Itens Escolhidos ({listaItensSacola.length})
               </h4>
-              
-              {/* Tabela no Desktop */}
-              <div className="desktop-items-table" style={{ backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ backgroundColor: 'var(--bg-input)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
@@ -684,47 +976,49 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                   <tbody>
                     {listaItensSacola.map(item => (
                       <tr key={item.produtoId} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-main)' }}>{item.nome}</td>
+                        <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-main)' }}>
+                          <div>{item.nome}</div>
+                          {item.observacao && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--primary-accent)', fontWeight: 500, marginTop: '2px' }}>
+                              Obs: "{item.observacao}"
+                            </div>
+                          )}
+                        </td>
                         <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700 }}>{item.quantidade}</td>
                         <td style={{ padding: '10px 14px', textAlign: 'right' }}>R$ {Number(item.precoUnitario).toFixed(2)}</td>
-                        <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--primary-accent)' }}>
+                        <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--text-main)' }}>
                           R$ {(item.quantidade * item.precoUnitario).toFixed(2)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card-hover)' }}>
+                      <td colSpan={3} style={{ padding: '8px 14px', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                        Subtotal dos Itens:
+                      </td>
+                      <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--text-main)', fontSize: '0.85rem' }}>
+                        R$ {subtotalSacola.toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr style={{ backgroundColor: 'var(--bg-card-hover)' }}>
+                      <td colSpan={3} style={{ padding: '8px 14px', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                        🛵 Taxa de Entrega Padrão:
+                      </td>
+                      <td style={{ padding: '8px 14px', textAlign: 'right', fontWeight: 600, color: '#34d399', fontSize: '0.85rem' }}>
+                        + R$ {taxaEntrega.toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr style={{ backgroundColor: 'var(--bg-input)', borderTop: '2px solid var(--border-color)' }}>
+                      <td colSpan={3} style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--text-main)', fontSize: '0.92rem' }}>
+                        Total a Pagar:
+                      </td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: 'var(--primary-accent)', fontSize: '1.05rem' }}>
+                        R$ {valorTotalSacola}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
-              </div>
-
-              {/* Lista em Cards no Mobile (Zero Overflow) */}
-              <div className="mobile-items-list" style={{ display: 'none', flexDirection: 'column', gap: '8px' }}>
-                {listaItensSacola.map(item => (
-                  <div
-                    key={item.produtoId}
-                    style={{
-                      backgroundColor: 'var(--bg-card)',
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      border: '1px solid var(--border-color)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '12px'
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem', wordBreak: 'break-word' }}>
-                        {item.nome}
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        {item.quantidade}x R$ {Number(item.precoUnitario).toFixed(2)}
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 800, color: 'var(--primary-accent)', fontSize: '1rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      R$ {(item.quantidade * item.precoUnitario).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
 
@@ -732,25 +1026,23 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
         )}
 
         {/* Rodapé Fixo do Modal */}
-        <div className="create-order-modal-footer" style={{
-          padding: '14px 20px',
+        <div style={{
+          padding: '16px 24px',
           backgroundColor: 'var(--bg-card)',
           borderTop: '1px solid var(--border-color)',
           display: 'flex',
-          justifyContent: 'space-between',
+          justify: 'space-between',
           alignItems: 'center',
-          gap: '14px',
-          flexShrink: 0,
-          boxSizing: 'border-box'
+          gap: '16px'
         }}>
-          <div className="create-order-footer-price">
+          <div>
             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Valor Total do Pedido:</span>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary-accent)', margin: 0 }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary-accent)', margin: 0 }}>
               R$ {valorTotalSacola}
             </div>
           </div>
 
-          <div className="create-order-footer-actions" style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
             {passoAtual === 1 ? (
               <>
                 <button type="button" className="btn-secondary" onClick={aoFechar}>
@@ -759,9 +1051,10 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={listaItensSacola.length === 0}
+                  disabled={listaItensSacola.length === 0 || (isClientePerfil && !estaAberta)}
                   onClick={() => setPassoAtual(2)}
-                  style={{ opacity: listaItensSacola.length === 0 ? 0.5 : 1, cursor: listaItensSacola.length === 0 ? 'not-allowed' : 'pointer' }}
+                  style={{ opacity: (listaItensSacola.length === 0 || (isClientePerfil && !estaAberta)) ? 0.5 : 1, cursor: (listaItensSacola.length === 0 || (isClientePerfil && !estaAberta)) ? 'not-allowed' : 'pointer' }}
+                  title={isClientePerfil && !estaAberta ? 'Estabelecimento fechado no momento' : 'Avançar para Endereço'}
                 >
                   Avançar para Endereço <ArrowRight size={18} />
                 </button>
@@ -774,8 +1067,10 @@ export function CreateOrderModal({ aoFechar, aoCriarPedido, usuario }) {
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled={carregando}
+                  disabled={carregando || (isClientePerfil && !estaAberta)}
                   onClick={aoSubmeterFinal}
+                  style={{ opacity: (carregando || (isClientePerfil && !estaAberta)) ? 0.5 : 1, cursor: (carregando || (isClientePerfil && !estaAberta)) ? 'not-allowed' : 'pointer' }}
+                  title={isClientePerfil && !estaAberta ? 'Estabelecimento fechado no momento' : 'Confirmar e Enviar Pedido'}
                 >
                   {carregando ? 'Confirmando...' : '🚀 Confirmar e Enviar Pedido'}
                 </button>

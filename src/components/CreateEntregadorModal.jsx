@@ -121,14 +121,16 @@ export function CreateEntregadorModal({ aoFechar, aoCriarComSucesso }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="ent-telefone">Telefone / WhatsApp *</label>
+              <label htmlFor="ent-telefone">Telefone / WhatsApp (Apenas números) *</label>
               <input
                 id="ent-telefone"
                 type="text"
+                inputMode="numeric"
                 className="form-input"
-                placeholder="(11) 98888-7777"
+                placeholder="11988887777"
+                maxLength={11}
                 value={telefone}
-                onChange={(e) => definirTelefone(e.target.value)}
+                onChange={(e) => definirTelefone(e.target.value.replace(/\D/g, ''))}
                 required
               />
             </div>

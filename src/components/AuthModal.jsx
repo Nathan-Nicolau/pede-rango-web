@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { servicoAutenticacao } from '../services/api';
-import { Flame, Utensils, LogIn, UserPlus, AlertCircle, ChevronLeft, ChevronRight, Eye, EyeOff, CheckCircle2, XCircle, RefreshCw, MapPin, Phone, CreditCard, User, Mail, Lock } from 'lucide-react';
+import { Utensils, LogIn, UserPlus, AlertCircle, ChevronLeft, ChevronRight, Eye, EyeOff, CheckCircle2, XCircle, RefreshCw, MapPin, Phone, CreditCard, User, Mail, Lock } from 'lucide-react';
 
 // Slides do Carrossel com SVGs Customizados no tema Vermelho & Dark
 const SLIDES_CARROSSEL = [
@@ -120,11 +120,13 @@ const SLIDES_CARROSSEL = [
   }
 ];
 
-export function AuthModal({ aoAutenticarComSucesso }) {
+export function AuthModal({ aoAutenticarComSucesso, tema }) {
   const [ehModoLogin, definirEhModoLogin] = useState(true);
   const [nome, definirNome] = useState('');
-  const [email, definirEmail] = useState('');
-  const [senha, definirSenha] = useState('');
+  const [emailLogin, definirEmailLogin] = useState('');
+  const [senhaLogin, definirSenhaLogin] = useState('');
+  const [emailCadastro, definirEmailCadastro] = useState('');
+  const [senhaCadastro, definirSenhaCadastro] = useState('');
   const [cpf, definirCpf] = useState('');
   const [telefone, definirTelefone] = useState('');
   const [enderecoPadrao, definirEnderecoPadrao] = useState('');
@@ -162,7 +164,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
       return;
     }
 
-    const emailLimpo = email.trim();
+    const emailLimpo = emailCadastro.trim();
     const regexEmailValido = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     if (!emailLimpo || !regexEmailValido.test(emailLimpo)) {
@@ -186,7 +188,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [email, ehModoLogin]);
+  }, [emailCadastro, ehModoLogin]);
 
   // Efeito Lazy Check para CPF
   useEffect(() => {
@@ -255,21 +257,22 @@ export function AuthModal({ aoAutenticarComSucesso }) {
   const slideAtual = SLIDES_CARROSSEL[indiceSlide];
 
   // Regras de validação do formulário
-  const emailValidoFormat = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim());
+  const emailLoginValido = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailLogin.trim());
+  const emailCadastroValido = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailCadastro.trim());
 
   const formValido = ehModoLogin
-    ? (emailValidoFormat && senha.length >= 1)
+    ? (emailLoginValido && senhaLogin.length >= 1)
     : (
         nome.trim().length >= 3 &&
-        emailValidoFormat &&
+        emailCadastroValido &&
         !emailJaExiste &&
         !checandoEmail &&
         !cpfJaExiste &&
         !checandoCpf &&
         !telefoneJaExiste &&
         !checandoTelefone &&
-        senha.length >= 6 &&
-        cpf.trim().length >= 11 &&
+        senhaCadastro.length >= 6 &&
+        cpf.trim().length === 11 &&
         telefone.trim().length >= 10 &&
         enderecoPadrao.trim().length >= 5
       );
@@ -299,13 +302,13 @@ export function AuthModal({ aoAutenticarComSucesso }) {
 
     try {
       if (ehModoLogin) {
-        const resposta = await servicoAutenticacao.entrar(email, senha);
+        const resposta = await servicoAutenticacao.entrar(emailLogin.trim(), senhaLogin);
         aoAutenticarComSucesso(resposta);
       } else {
         const resposta = await servicoAutenticacao.cadastrar({
           nome: nome.trim(),
-          email: email.trim(),
-          senha,
+          email: emailCadastro.trim(),
+          senha: senhaCadastro,
           cpf: cpf.trim(),
           telefone: telefone.trim(),
           enderecoPadrao: enderecoPadrao.trim()
@@ -330,7 +333,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
   return (
     <div className="modal-overlay" style={{ padding: '20px' }}>
       <div
-        className="modal-content auth-modal-card"
+        className="modal-content"
         style={{
           maxWidth: '1120px',
           width: '100%',
@@ -346,7 +349,6 @@ export function AuthModal({ aoAutenticarComSucesso }) {
       >
         {/* LADO ESQUERDO: Form de Login / Cadastro */}
         <div
-          className="auth-form-side"
           style={{
             padding: '36px 40px',
             display: 'flex',
@@ -361,14 +363,22 @@ export function AuthModal({ aoAutenticarComSucesso }) {
             <div
               style={{
                 display: 'inline-flex',
-                background: 'linear-gradient(135deg, #D30101 0%, #850000 100%)',
-                padding: '10px',
-                borderRadius: '14px',
-                marginBottom: '8px',
-                boxShadow: '0 6px 20px rgba(211, 1, 1, 0.4)'
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                marginBottom: '10px',
+                boxShadow: tema === 'light' ? '0 6px 20px rgba(211, 1, 1, 0.2)' : '0 8px 24px rgba(211, 1, 1, 0.4)',
+                border: tema === 'light' ? '1px solid rgba(211, 1, 1, 0.2)' : '1px solid rgba(211, 1, 1, 0.35)',
+                backgroundColor: tema === 'light' ? '#ffffff' : '#121216',
+                transition: 'all 0.3s ease'
               }}
             >
-              <Flame color="#ffffff" size={24} />
+              <img
+                src={tema === 'light' ? '/assets/logo-pede-rango-light.png' : '/assets/logo-pede-rango.png'}
+                alt="Pede Rango Delivery"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--title-color)', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>
               {ehModoLogin ? 'Acessar Conta' : 'Cadastro de Cliente'}
@@ -380,7 +390,6 @@ export function AuthModal({ aoAutenticarComSucesso }) {
 
           {/* Tab Toggle (Entrar / Cadastrar) */}
           <div
-            className="auth-tabs-toggle"
             style={{
               position: 'relative',
               display: 'flex',
@@ -409,7 +418,6 @@ export function AuthModal({ aoAutenticarComSucesso }) {
 
             <button
               type="button"
-              className="auth-tab-btn"
               onClick={() => { definirEhModoLogin(true); definirErro(null); }}
               style={{
                 flex: 1,
@@ -434,7 +442,6 @@ export function AuthModal({ aoAutenticarComSucesso }) {
             </button>
             <button
               type="button"
-              className="auth-tab-btn"
               onClick={() => { definirEhModoLogin(false); definirErro(null); }}
               style={{
                 flex: 1,
@@ -493,8 +500,8 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                     type="email"
                     className="form-input"
                     placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => definirEmail(e.target.value)}
+                    value={emailLogin}
+                    onChange={(e) => definirEmailLogin(e.target.value)}
                     required
                   />
                 </div>
@@ -507,8 +514,8 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                       type={mostrarSenha ? 'text' : 'password'}
                       className="form-input"
                       placeholder="••••••••"
-                      value={senha}
-                      onChange={(e) => definirSenha(e.target.value)}
+                      value={senhaLogin}
+                      onChange={(e) => definirSenhaLogin(e.target.value)}
                       style={{ paddingRight: '44px', width: '100%' }}
                       required
                     />
@@ -543,7 +550,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                   />
                 </div>
 
-                <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   {/* Campo CPF (Aceita Apenas Números) */}
                   <div className="form-group">
                     <label htmlFor="auth-cpf">CPF (Apenas números) *</label>
@@ -593,7 +600,7 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                   </div>
                 </div>
 
-                <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">
                     <label htmlFor="auth-email-reg">E-mail *</label>
                     <div style={{ position: 'relative' }}>
@@ -602,13 +609,13 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                         type="email"
                         className="form-input"
                         placeholder="seu@email.com"
-                        value={email}
-                        onChange={(e) => definirEmail(e.target.value)}
+                        value={emailCadastro}
+                        onChange={(e) => definirEmailCadastro(e.target.value)}
                         required
                         style={{
                           borderColor: emailJaExiste
                             ? '#ef4444'
-                            : emailValidoFormat && !checandoEmail && !emailJaExiste
+                            : emailCadastroValido && !checandoEmail && !emailJaExiste
                             ? '#10b981'
                             : undefined
                         }}
@@ -630,8 +637,8 @@ export function AuthModal({ aoAutenticarComSucesso }) {
                         type={mostrarSenha ? 'text' : 'password'}
                         className="form-input"
                         placeholder="••••••••"
-                        value={senha}
-                        onChange={(e) => definirSenha(e.target.value)}
+                        value={senhaCadastro}
+                        onChange={(e) => definirSenhaCadastro(e.target.value)}
                         style={{ paddingRight: '40px', width: '100%' }}
                         required
                       />
@@ -718,7 +725,6 @@ export function AuthModal({ aoAutenticarComSucesso }) {
 
         {/* LADO DIREITO: Carrossel SVG */}
         <div
-          className="auth-carousel-side"
           style={{
             position: 'relative',
             background: 'var(--carousel-bg)',

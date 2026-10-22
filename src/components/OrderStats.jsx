@@ -43,7 +43,7 @@ export function OrderStats({ pedidos = [] }) {
   ];
 
   return (
-    <div className="order-stats-grid" style={{
+    <div className="stats-grid" style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
       gap: '16px',
@@ -52,7 +52,7 @@ export function OrderStats({ pedidos = [] }) {
       {estatisticas.map((stat, idx) => (
         <div
           key={idx}
-          className={`glass-panel order-stats-card order-stats-card-${idx}`}
+          className="glass-panel"
           style={{
             padding: '18px 20px',
             borderRadius: '16px',
@@ -62,23 +62,22 @@ export function OrderStats({ pedidos = [] }) {
             alignItems: 'center'
           }}
         >
-          <div className="order-stats-info">
-            <span className="order-stats-title" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+          <div>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
               {stat.titulo}
             </span>
-            <div className="order-stats-value" style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>
               {stat.valor}
             </div>
           </div>
-          <div className="order-stats-icon-wrapper" style={{
+          <div style={{
             backgroundColor: 'var(--bg-input)',
             padding: '12px',
             borderRadius: '12px',
             border: `1px solid ${stat.corBorda}`,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
+            justifyContent: 'center'
           }}>
             {stat.icone}
           </div>

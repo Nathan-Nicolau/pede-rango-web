@@ -1,24 +1,33 @@
-function obterUrlBaseApi() {
+const calcularUrlBaseApi = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
   if (typeof window !== 'undefined' && window.location) {
-    const host = window.location.hostname;
-    // Suporte a acesso mobile via nip.io (ex: app.192.168.3.27.nip.io -> api.192.168.3.27.nip.io)
-    if (host.includes('nip.io')) {
-      return window.location.protocol + '//' + host.replace(/^app\./, 'api.');
+    const { hostname, protocol, port } = window.location;
+
+    // Se estiver usando domínio nip.io (ex: app.192.168.3.27.nip.io -> api.192.168.3.27.nip.io)
+    if (hostname.includes('nip.io')) {
+      const apiHost = hostname.replace(/^app\./, 'api.');
+      const portaStr = (port && port !== '80' && port !== '443') ? `:${port}` : '';
+      return `${protocol}//${apiHost}${portaStr}`;
     }
-    if (host.includes('pede-rango.local')) {
-      return 'http://api.pede-rango.local';
+
+    // Se estiver usando domínio local (ex: app.pede-rango.local -> api.pede-rango.local)
+    if (hostname.includes('pede-rango.local')) {
+      const apiHost = hostname.replace(/^app\./, 'api.');
+      const portaStr = (port && port !== '80' && port !== '443') ? `:${port}` : '';
+      return `${protocol}//${apiHost}${portaStr}`;
     }
-    if (host.includes('food-delivery.local')) {
-      return 'http://api.food-delivery.local';
-    }
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://api.pede-rango.local';
+
+    // Se acessando diretamente por IP (ex: 192.168.3.27 -> api.192.168.3.27.nip.io ou porta 8100)
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) && hostname !== '127.0.0.1' && hostname !== 'localhost') {
+      return `${protocol}//api.${hostname}.nip.io`;
     }
   }
-  return import.meta.env.VITE_API_URL || 'http://api.pede-rango.local';
-}
+  return 'http://localhost:8100';
+};
 
-const URL_BASE_API = obterUrlBaseApi();
+const URL_BASE_API = calcularUrlBaseApi();
 
 export async function requisitarApi(endpoint, opcoes = {}) {
   const token = localStorage.getItem('token');
@@ -455,7 +464,7 @@ export const servicoClientes = {
   },
 };
 
-const CHAVE_CARDAPIO_LOCAL = 'food_delivery_cardapio_itens';
+const CHAVE_CARDAPIO_LOCAL = 'pede_rango_cardapio_itens';
 
 const ITENS_CARDAPIO_SEED = [
   { id: '1', nome: 'X-Salada Especial', categoria: 'Lanches', precoUnitario: 28.90, descricao: 'Pão artesanal, hambúrguer 180g, queijo prato, alface, tomate e maionese da casa.' },
@@ -501,8 +510,102 @@ export const servicoCardapio = {
   }
 };
 
+export const servicoRelatorios = {
+  obterDashboard: async (periodo = 'SEMANA', dataInicio = null, dataFim = null) => {
+    const params = new URLSearchParams();
+    if (periodo) params.append('periodo', periodo);
+    if (dataInicio) params.append('dataInicio', dataInicio);
+    if (dataFim) params.append('dataFim', dataFim);
+    return await requisitarApi(`/api/relatorios/dashboard?${params.toString()}`);
+  },
+
+  exportarCsv: async (periodo = 'SEMANA', dataInicio = null, dataFim = null) => {
+    const params = new URLSearchParams();
+    if (periodo) params.append('periodo', periodo);
+    if (dataInicio) params.append('dataInicio', dataInicio);
+    if (dataFim) params.append('dataFim', dataFim);
+
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const resposta = await fetch(`${URL_BASE_API}/api/relatorios/exportar-csv?${params.toString()}`, {
+      headers
+    });
+
+    if (!resposta.ok) {
+      let mensagem = 'Falha ao exportar relatório CSV';
+      try {
+        const erroJson = await resposta.json();
+        if (erroJson?.mensagem || erroJson?.message) {
+          mensagem = erroJson.mensagem || erroJson.message;
+        }
+      } catch {}
+      throw new Error(mensagem);
+    }
+
+    const blob = await resposta.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-vendas-${(periodo || 'periodo').toLowerCase()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+};
+
+export const servicoConfiguracoes = {
+  obter: async () => {
+    return await requisitarApi('/configuracoes');
+  },
+
+  abrirExpediente: async (dados) => {
+    return await requisitarApi('/configuracoes/abrir-expediente', {
+      method: 'POST',
+      body: JSON.stringify(dados || {}),
+    });
+  },
+
+  fecharExpediente: async () => {
+    return await requisitarApi('/configuracoes/fechar-expediente', {
+      method: 'POST',
+    });
+  },
+
+  alternarStatus: async () => {
+    return await requisitarApi('/configuracoes/alternar-status', {
+      method: 'POST',
+    });
+  },
+
+  atualizar: async (dados) => {
+    return await requisitarApi('/configuracoes', {
+      method: 'PUT',
+      body: JSON.stringify(dados),
+    });
+  },
+};
+
+export const servicoAvaliacoes = {
+  avaliarPedido: async (codigoOuId, nota, comentario = '') => {
+    return await requisitarApi(`/pedidos/${codigoOuId}/avaliar`, {
+      method: 'POST',
+      body: JSON.stringify({ nota, comentario }),
+    });
+  },
+
+  obterAvaliacao: async (codigoOuId) => {
+    return await requisitarApi(`/pedidos/${codigoOuId}/avaliacao`);
+  },
+};
+
 // Aliases para compatibilidade
 export const authService = servicoAutenticacao;
 export const orderService = servicoPedidos;
 export const apiFetch = requisitarApi;
+
 
