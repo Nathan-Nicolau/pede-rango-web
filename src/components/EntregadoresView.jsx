@@ -71,9 +71,9 @@ export function EntregadoresView() {
   return (
     <div>
       {/* Topo da Aba */}
-      <div style={{
+      <div className="view-header-row" style={{
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '16px',
@@ -94,9 +94,9 @@ export function EntregadoresView() {
       </div>
 
       {/* Barra de Busca e Atualizar */}
-      <div style={{
+      <div className="view-search-row" style={{
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         gap: '16px',
         marginBottom: '24px',
@@ -105,15 +105,15 @@ export function EntregadoresView() {
         borderRadius: '16px',
         border: '1px solid var(--border-color)'
       }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+        <div className="search-input-wrapper" style={{ position: 'relative', flex: 1 }}>
+          <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <input
             type="text"
-            className="form-input"
+            className="search-input-with-icon form-input"
             placeholder="Buscar entregador por nome, telefone, veículo ou e-mail..."
             value={termoBusca}
             onChange={(e) => definirTermoBusca(e.target.value)}
-            style={{ paddingLeft: '40px', width: '100%' }}
+            style={{ paddingLeft: '42px', width: '100%' }}
           />
         </div>
 

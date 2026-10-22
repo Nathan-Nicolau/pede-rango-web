@@ -338,7 +338,7 @@ function CadastrarUsuarioModal({ aoFechar, aoSalvarComSucesso }) {
               value={nome} onChange={e => setNome(e.target.value)} required />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="auth-form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label htmlFor="usr-email">E-mail de Acesso *</label>
               <input id="usr-email" type="email" className="form-input"
@@ -349,8 +349,8 @@ function CadastrarUsuarioModal({ aoFechar, aoSalvarComSucesso }) {
             <div className="form-group">
               <label htmlFor="usr-perfil">Perfil / Função *</label>
               <select id="usr-perfil" className="form-input" value={perfil} onChange={e => setPerfil(e.target.value)} required>
-                <option value="CLIENTE">Cliente (Acesso ao cardápio e pedidos)</option>
-                <option value="ENTREGADOR">Entregador (Gestão e aceite de entregas)</option>
+                <option value="CLIENTE">Cliente (Cardápio e pedidos)</option>
+                <option value="ENTREGADOR">Entregador (Gestão de entregas)</option>
                 <option value="ADMIN">Administrador (Acesso total)</option>
               </select>
             </div>
@@ -375,7 +375,7 @@ function CadastrarUsuarioModal({ aoFechar, aoSalvarComSucesso }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <div className="modal-footer-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button type="button" className="btn-secondary" onClick={aoFechar}>Cancelar</button>
             <button type="submit" className="btn-primary" disabled={carregando}>
               {carregando ? 'Salvando...' : 'Cadastrar Usuário'}
@@ -583,19 +583,19 @@ export function UsuariosView({ perfilInicial = 'CLIENTE' }) {
         <div style={{ flex: 1, minWidth: '16px' }} />
 
         {/* Campo de busca */}
-        <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: '360px' }}>
+        <div className="search-input-wrapper" style={{ position: 'relative', flex: '1 1 240px', maxWidth: '360px' }}>
           <Search
             size={16}
             color="var(--text-secondary)"
-            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', zIndex: 1 }}
           />
           <input
             type="text"
-            className="form-input"
+            className="search-input-with-icon form-input"
             placeholder="Buscar por nome ou e-mail..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            style={{ paddingLeft: '36px', width: '100%' }}
+            style={{ paddingLeft: '42px', width: '100%' }}
           />
         </div>
 

@@ -1,18 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="foodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#D30101" />
-      <stop offset="100%" stop-color="#9E0000" />
+    <linearGradient id="pedeRangoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF2A2A" />
+      <stop offset="100%" stop-color="#900000" />
+    </linearGradient>
+    <linearGradient id="flameInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="100%" stop-color="#FF5722" />
     </linearGradient>
   </defs>
-  <!-- Fundo do ícone da aplicação com gradiente vermelho e cantos arredondados -->
-  <rect width="64" height="64" rx="16" fill="url(#foodGrad)" />
+  <!-- Background com cantos arredondados -->
+  <rect width="64" height="64" rx="16" fill="url(#pedeRangoGrad)" />
   
-  <!-- Ícone de Talheres (Utensils) em branco -->
-  <g fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 22,14 V 26 A 6,6 0 0,0 34,26 V 14" />
-    <path d="M 28,14 V 50" />
-    <path d="M 42,14 V 50" />
-    <path d="M 42,14 C 48,22 48,28 42,32" />
+  <!-- Ícone Pede Rango: Chama Estilizada de Sabor & Energia -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Contorno externo da chama -->
+    <path d="M 32 10 C 32 10, 43 21, 43 33 C 43 42, 38 49, 32 52 C 26 49, 21 42, 21 33 C 21 24, 27 18, 32 10 Z" fill="rgba(255, 255, 255, 0.15)" />
+    <!-- Núcleo quente interno -->
+    <path d="M 32 26 C 35 30, 37 34, 37 38 C 37 43, 34 46, 32 47 C 30 46, 27 43, 27 38 C 27 34, 29 30, 32 26 Z" fill="url(#flameInner)" stroke="none" />
   </g>
 </svg>
