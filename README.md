@@ -61,5 +61,15 @@ Com o cluster ativo, basta executar na raiz deste projeto:
 ./deploy-local.sh
 ```
 
+### Credenciais de Acesso Padrão
+Ao subir a API, o banco já é populado automaticamente com os usuários abaixo para teste de cada visão do sistema (a senha padrão para todos é **`123456`**):
+
+| Perfil | E-mail | Senha | O que testar na tela |
+| :--- | :--- | :--- | :--- |
+| **Administrador** | `admin@pederango.com` | `123456` | Dashboard de métricas, configurações da loja, cardápio, entregadores, clientes e usuários |
+| **Restaurante** | `restaurante@pederango.com` | `123456` | Abertura/pausa de expediente, fila de preparo de pedidos, alerta sonoro e impressão de comanda |
+| **Entregador** | `entregador@pederango.com` | `123456` | Fila de entregas atribuídas, saída para entrega, conclusão e contato via WhatsApp |
+| **Cliente** | `cliente@pederango.com` | `123456` | Cardápio, criação/repetição de pedidos, acompanhamento de status e avaliação de entregas |
+
 ### Gitflow para versionamento
  - Criação de branchs para Desenvolvimento contínuo, simulando um cenário real.
