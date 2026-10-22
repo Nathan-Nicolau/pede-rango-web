@@ -1,131 +1,65 @@
-# 🍔 Pede Rango WEB — Frontend PWA & Painel Administrativo
+# Pede Rango WEB
 
-Interface moderna, reativa e progressiva (PWA) construída com **React 18**, **Vite** e **Tailwind CSS**, oferecendo uma experiência completa tanto para clientes finais quanto para operadores de restaurante, administradores e entregadores.
+Essa aplicação, desenvolvida com React + Vite, permite o acesso visual ao sistema do **Pede Rango** integrando com a API, com autenticação por login e adaptação de tela conforme o perfil do usuário.
 
----
+Na versão base, a aplicação atendia os seguintes itens:
+* Criar novos pedidos
+* Visualizar pedidos e seus andamentos
+* Visualizar os entregadores
 
-## 📌 Funcionalidades Principais
+### Funções da Aplicação e Perfis
+* **Visão do Cliente** - Navegação pelo cardápio, criação de pedidos com escolha de forma de pagamento, acompanhamento do status em tempo real, repetição de pedido anterior com 1 clique e avaliação do pedido após a entrega.
+* **Visão do Restaurante (Operação / Cozinha)** - Controle da fila de pedidos do dia, avanço de status de preparo, pausa rápida de itens esgotados no cardápio, alerta sonoro de novos pedidos e impressão de comanda.
+* **Visão do Entregador** - Fila de pedidos prontos para entrega, confirmação de saída/entrega e botão de contato rápido com o cliente via WhatsApp.
+* **Visão do Administrador** - Acesso completo à operação, gestão de cardápio, entregadores, clientes, usuários, configurações da loja e Dashboard com métricas.
 
-### 🛍️ 1. Experiência do Cliente (Cardápio & Pedidos)
-- **Cardápio Interativo**: Navegação por categorias (Lanches, Pizzas, Bebidas, Sobremesas, Combos, etc.) com busca em tempo real.
-- **Sacola de Compras com Observações**: Personalização de itens (ex: *"Sem cebola"*, *"Ponto da carne bem passado"*).
-- **Checkout Guiado & ViaCEP**: Preenchimento automático de endereço via CEP com cálculo transparente de taxa de entrega e tempo estimado.
-- **Múltiplas Formas de Pagamento**:
-  - `DINHEIRO` (com cálculo e conferência de troco);
-  - `PIX` (com visualização e cópia da chave cadastrada);
-  - `CARTAO_CREDITO` e `CARTAO_DEBITO` (para pagamento na maquininha na entrega).
-- **Linha do Tempo Visual (Stepper de 5 Etapas)**: Acompanhamento em tempo real do status do pedido (`RECEBIDO` ➔ `EM_PREPARO` ➔ `PRONTO_PARA_ENTREGA` ➔ `SAIU_PARA_ENTREGA` ➔ `ENTREGUE`).
-- **Repetir Pedido em 1 Clique (Reorder)**: Reenvio ágil de pedidos favoritos anteriores diretamente pelo card ou modal de detalhes.
-- **Cancelamento com Auditoria**: Opção de cancelamento pelo cliente antes do despacho, com registro de motivo.
+### Melhorias e Adições Técnicas em relação à versão base
 
----
+* **Cardápio Interativo e Sacola de Compras**  
+  - Adicionada filtragem por categorias, busca de produtos, botão direto "Pedir Esse", observações por item e bloqueio visual quando um produto está pausado no dia ("Esgotado hoje").
+* **Checkout com ViaCEP, Formas de Pagamento e Troco**  
+  - Preenchimento automático do endereço ao digitar o CEP, exibição da taxa de entrega vigente e suporte a `Dinheiro` (com cálculo automático de troco), `PIX` (com cópia rápida da chave) e `Cartão`.
+* **Linha do Tempo do Pedido (Stepper) e Reorder**  
+  - Visualização clara das 5 etapas do pedido (`Recebido` até `Entregue`) com previsão dinâmica de horário, além da opção de refazer um pedido anterior em 1 clique.
+* **Gestão de Expediente da Loja**  
+  - Controle operacional para abrir o dia de trabalho, pausar temporariamente o recebimento de novos pedidos em momentos de pico e encerrar o expediente (bloqueando novos pedidos quando a loja está fechada).
+* **Alerta Sonoro (Web Audio API) e Impressão de Comanda**  
+  - Sincronização periódica em segundo plano com aviso sonoro quando chega pedido novo na cozinha, e gerador de comanda formatado para impressoras térmicas (80mm) ou folha comum.
+* **Dashboard Administrativo e Exportação CSV**  
+  - Painel gerencial com indicadores de faturamento, ticket médio, taxa de cancelamento, nota média de satisfação (1 a 5 estrelas) e exportação de relatório em arquivo CSV.
+* **Tema Dark / Light e Responsividade**  
+  - Identidade visual padronizada na cor do Pede Rango (`#D30101`), com alternância entre tema claro e escuro e layout responsivo para desktop e celular.
 
-### 🍳 2. Painel Operacional do Restaurante & Frente de Caixa
-- **Controle de Turno & Expediente Diário**:
-  - **Iniciar Dia de Trabalho**: Modal para confirmar/ajustar a taxa de entrega e tempo estimado do dia.
-  - **Pausar / Retomar Recebimento**: Controle instantâneo para pausar a entrada de novos pedidos em horários de pico e retomar sem reiniciar o dia.
-  - **Encerrar Expediente**: Fechamento do turno com reset diário automático à meia-noite (`00:00`).
-- **Gestão de Pedidos em Tempo Real**: Filtros por status, cards responsivos e transição de estados de produção.
-- **Impressão de Comanda de Cozinha**: Formatação otimizada para impressoras térmicas (bobinas de 80mm) ou folha padrão com dados completos do pedido, itens e observações.
-- **Gestão do Cardápio**: Cadastro, edição, alteração de preços e inativação de produtos.
+**React + Vite**  
+Utilizados para construir uma interface rápida, modular e reativa, comunicando diretamente com a API REST e gerenciando a sessão do usuário via token JWT.
 
----
+**Docker + Nginx**  
+O projeto possui um `Dockerfile` multi-stage que realiza o build da aplicação React com Node e empacota os arquivos finais em um servidor Nginx Alpine leve, pronto para rodar em qualquer ambiente.
 
-### 🚚 3. Fila de Entregas & Entregadores
-- **Visão Dedicada do Entregador**: Fila de pedidos prontos para entrega (`PRONTO_PARA_ENTREGA`).
-- **Atribuição Rápida**: Aceite de entrega vinculando o entregador ao pedido e alterando para `SAIU_PARA_ENTREGA`.
-- **Contato Rápido via WhatsApp**: Botão com link direto para iniciar conversa com o cliente já com dados do pedido.
-- **Confirmação de Entrega**: Finalização do pedido com 1 clique.
+**Kubernetes (Kind + Helm)**  
+Conta também com o script `./deploy-local.sh` para gerar a imagem Docker, importar no cluster Kubernetes local e atualizar o deployment automaticamente (em conjunto com o repositório `pede-rango-infra`).
 
----
+### Executando
 
-### 📊 4. Dashboard Executivo de BI & Gestão (Admin)
-- **Métricas Consolidadas**: Faturamento total, volume de pedidos, ticket médio e taxa de cancelamento.
-- **Filtros por Período**: Visualização por `Hoje`, `Esta Semana`, `Quinzena` ou `Este Mês`.
-- **Exportação de Relatórios em CSV**: Download de arquivo analítico com codificação UTF-8 BOM compatível nativamente com Excel.
-- **Gestão de Usuários**: Visualização, contagem e criação de usuários com controle de perfil (`ADMIN`, `RESTAURANTE`, `ENTREGADOR`, `CLIENTE`).
-- **Configurações Gerais**: Ajuste de telefone de contato, chave PIX e parâmetros de taxa.
-
----
-
-## 🛠️ Stack Tecnológica
-
-| Componente | Tecnologia | Descrição |
-| :--- | :--- | :--- |
-| **Framework Base** | React 18 | Biblioteca UI reativa com hooks e context API |
-| **Build Tool** | Vite 5 | Bundler de altíssima velocidade e Hot Module Replacement (HMR) |
-| **Estilização** | Tailwind CSS 3 | Framework de CSS utilitário responsivo |
-| **Ícones** | Lucide React | Conjunto de ícones leves e consistentes |
-| **HTTP Client** | Axios | Cliente HTTP para consumo da REST API com interceptors JWT |
-| **Servidor de Produção** | NGINX Alpine | Servidor web leve e de alta performance |
-
----
-
-## 📁 Estrutura de Diretórios
-
-```
-pede-rango-web/
-├── public/                     # Assets estáticos
-├── src/
-│   ├── components/             # Componentes modulares e reutilizáveis
-│   │   ├── AuthModal.jsx       # Modal de Login e Auto-cadastro com formulários isolados
-│   │   ├── CardapioView.jsx    # Visualização e gestão do cardápio
-│   │   ├── CreateOrderModal.jsx# Wizard de criação de pedido com ViaCEP e pagamento
-│   │   ├── DashboardBI.jsx     # Painel de BI, gráficos e exportação de CSV
-│   │   ├── DeliveryAssignmentModal.jsx # Atribuição de entregador
-│   │   ├── Header.jsx          # Barra superior com status da loja e ações
-│   │   ├── OrderCard.jsx       # Card de pedido com ações rápidas e reorder
-│   │   ├── OrderDetailModal.jsx# Modal de detalhes com stepper de 5 etapas e impressão
-│   │   ├── StoreConfigModal.jsx# Modal de configurações gerais do estabelecimento
-│   │   ├── UsersModal.jsx      # Modal de gestão de usuários (Admin)
-│   │   └── ...
-│   ├── context/
-│   │   └── AuthContext.jsx     # Gerenciamento de sessão, token JWT e perfil RBAC
-│   ├── services/
-│   │   └── api.js              # Instância Axios e métodos de integração com o backend
-│   ├── utils/
-│   │   ├── formatters.js       # Formatadores de moeda (BRL), data, telefone e CPF
-│   │   ├── imprimirComanda.js  # Utilitário de formatação de comanda térmica para impressão
-│   │   └── sanitizers.js       # Sanitização e máscaras numéricas estritas
-│   ├── App.jsx                 # Componente raiz da aplicação
-│   └── main.jsx                # Ponto de entrada React
-├── Dockerfile                  # Build multi-stage com Node e NGINX
-├── nginx.conf                  # Configuração de SPA routing no NGINX
-└── package.json                # Dependências e scripts
-```
-
----
-
-## 🚀 Como Executar
-
-### 1. Desenvolvimento Local (Vite)
-```bash
-# Instalar dependências
+**Opção 1 — Rodando em modo de desenvolvimento local:**
+Com a API rodando na porta `8100`, basta instalar as dependências e subir o servidor do Vite:
+```shell
 npm install
-
-# Iniciar servidor de desenvolvimento (porta 5173 ou configurada)
 npm run dev
 ```
+A aplicação ficará disponível em `http://localhost:5173`.
 
-### 2. Execução via Docker
-```bash
-# Build da imagem
-docker build -t pede-rango-web:v3 .
-
-# Execução em contêiner
-docker run -d -p 80:80 --name pede-rango-web pede-rango-web:v3
+**Opção 2 — Rodando via Docker Compose (junto com API e Banco):**
+Através do repositório `pede-rango-infra`, é possível subir todo o ambiente de uma vez:
+```shell
+docker compose up -d --build
 ```
 
-### 3. Deploy no Kubernetes (Kind + Helm)
-```bash
-# Executar script automatizado de build e deploy
+**Opção 3 — Deploy no Cluster Kubernetes Local (Kind):**
+Com o cluster ativo, basta executar na raiz deste projeto:
+```shell
 ./deploy-local.sh
 ```
 
----
-
-## 🔒 Segurança & Boas Práticas
-- **Isolamento de Credenciais**: Formulários de login e cadastro mantêm estados independentes para evitar conflitos de preenchimento automático.
-- **Sanitização Estrita**: Inputs numéricos (CPF, CEP, telefone, valores de taxa e preços) passam por tratamento e limpeza em tempo real.
-- **Armazenamento Seguro de Sessão**: Tokens JWT persistidos em `localStorage` com controle de expiração e limpeza automática ao deslogar.
-
+### Gitflow para versionamento
+ - Criação de branchs para Desenvolvimento contínuo, simulando um cenário real.
